@@ -1,0 +1,18 @@
+{
+  "configurations" : [
+    {
+      "id" : "4270696A-E8F1-49E3-B3FC-D31B51877CE8",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+
+  ],
+  "version" : 1
+}

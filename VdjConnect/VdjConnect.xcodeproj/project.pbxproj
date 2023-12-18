@@ -1,0 +1,454 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		22880A8B29098EA200436E07 /* TestProvider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22880A8629098EA200436E07 /* TestProvider.cpp */; };
+		22880A9029099B3900436E07 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22880A8C2909909700436E07 /* ApplicationServices.framework */; };
+		22880A9329099B3E00436E07 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 22880A7F29098AD200436E07 /* CoreFoundation.framework */; };
+		22880A9729099F2100436E07 /* Log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22880A9529099F2100436E07 /* Log.cpp */; };
+		22ECE1A9292818E500C80EF0 /* libcurl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 22ECE1A8292818E500C80EF0 /* libcurl.tbd */; };
+		22F935532B2BF69500B17B90 /* Main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22880A98290A1FC000436E07 /* Main.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		22880A7729098AC900436E07 /* VdjConnect.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VdjConnect.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		22880A7F29098AD200436E07 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		22880A8429098EA200436E07 /* Internet.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Internet.hpp; sourceTree = "<group>"; };
+		22880A8529098EA200436E07 /* TestProvider.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TestProvider.hpp; sourceTree = "<group>"; };
+		22880A8629098EA200436E07 /* TestProvider.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TestProvider.cpp; sourceTree = "<group>"; };
+		22880A8729098EA200436E07 /* vdjOnlineSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vdjOnlineSource.h; sourceTree = "<group>"; };
+		22880A8829098EA200436E07 /* JSON.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = JSON.hpp; sourceTree = "<group>"; };
+		22880A8C2909909700436E07 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
+		22880A8E2909929200436E07 /* libcurl.4.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurl.4.tbd; path = usr/lib/libcurl.4.tbd; sourceTree = SDKROOT; };
+		22880A9529099F2100436E07 /* Log.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Log.cpp; sourceTree = "<group>"; };
+		22880A9629099F2100436E07 /* Log.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Log.hpp; sourceTree = "<group>"; };
+		22880A98290A1FC000436E07 /* Main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Main.cpp; sourceTree = "<group>"; };
+		22880A9A290B7D2500436E07 /* VdjConnect.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = VdjConnect.xctestplan; path = VdjConnect.xcodeproj/VdjConnect.xctestplan; sourceTree = "<group>"; };
+		22ECE17C2924B6F200C80EF0 /* jsmn.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jsmn.h; sourceTree = "<group>"; };
+		22ECE17D2924B6F300C80EF0 /* jsmn.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = jsmn.c; sourceTree = "<group>"; };
+		22ECE17F2924C77E00C80EF0 /* fwd.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fwd.h; sourceTree = "<group>"; };
+		22ECE1802924C77E00C80EF0 /* memorystream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = memorystream.h; sourceTree = "<group>"; };
+		22ECE1812924C77E00C80EF0 /* reader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = reader.h; sourceTree = "<group>"; };
+		22ECE1822924C77E00C80EF0 /* prettywriter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = prettywriter.h; sourceTree = "<group>"; };
+		22ECE1832924C77E00C80EF0 /* ostreamwrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ostreamwrapper.h; sourceTree = "<group>"; };
+		22ECE1842924C77E00C80EF0 /* encodedstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodedstream.h; sourceTree = "<group>"; };
+		22ECE1852924C77E00C80EF0 /* filereadstream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filereadstream.h; sourceTree = "<group>"; };
+		22ECE1862924C77E00C80EF0 /* cursorstreamwrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cursorstreamwrapper.h; sourceTree = "<group>"; };
+		22ECE1872924C77E00C80EF0 /* istreamwrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = istreamwrapper.h; sourceTree = "<group>"; };
+		22ECE1882924C77E00C80EF0 /* uri.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uri.h; sourceTree = "<group>"; };
+		22ECE1892924C77E00C80EF0 /* stringbuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stringbuffer.h; sourceTree = "<group>"; };
+		22ECE18B2924C77E00C80EF0 /* ieee754.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ieee754.h; sourceTree = "<group>"; };
+		22ECE18C2924C77E00C80EF0 /* strtod.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = strtod.h; sourceTree = "<group>"; };
+		22ECE18D2924C77E00C80EF0 /* swap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = swap.h; sourceTree = "<group>"; };
+		22ECE18E2924C77E00C80EF0 /* regex.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = regex.h; sourceTree = "<group>"; };
+		22ECE18F2924C77E00C80EF0 /* diyfp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = diyfp.h; sourceTree = "<group>"; };
+		22ECE1902924C77E00C80EF0 /* biginteger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = biginteger.h; sourceTree = "<group>"; };
+		22ECE1912924C77E00C80EF0 /* strfunc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = strfunc.h; sourceTree = "<group>"; };
+		22ECE1922924C77E00C80EF0 /* itoa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = itoa.h; sourceTree = "<group>"; };
+		22ECE1932924C77E00C80EF0 /* stack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stack.h; sourceTree = "<group>"; };
+		22ECE1942924C77E00C80EF0 /* dtoa.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dtoa.h; sourceTree = "<group>"; };
+		22ECE1952924C77E00C80EF0 /* clzll.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = clzll.h; sourceTree = "<group>"; };
+		22ECE1962924C77E00C80EF0 /* meta.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = meta.h; sourceTree = "<group>"; };
+		22ECE1972924C77E00C80EF0 /* pow10.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pow10.h; sourceTree = "<group>"; };
+		22ECE1982924C77E00C80EF0 /* encodings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = encodings.h; sourceTree = "<group>"; };
+		22ECE1992924C77E00C80EF0 /* schema.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = schema.h; sourceTree = "<group>"; };
+		22ECE19A2924C77E00C80EF0 /* stream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stream.h; sourceTree = "<group>"; };
+		22ECE19B2924C77E00C80EF0 /* filewritestream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filewritestream.h; sourceTree = "<group>"; };
+		22ECE19C2924C77E00C80EF0 /* rapidjson.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = rapidjson.h; sourceTree = "<group>"; };
+		22ECE19D2924C77E00C80EF0 /* document.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = document.h; sourceTree = "<group>"; };
+		22ECE19E2924C77E00C80EF0 /* allocators.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = allocators.h; sourceTree = "<group>"; };
+		22ECE19F2924C77E00C80EF0 /* writer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = writer.h; sourceTree = "<group>"; };
+		22ECE1A12924C77E00C80EF0 /* error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = error.h; sourceTree = "<group>"; };
+		22ECE1A22924C77E00C80EF0 /* en.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = en.h; sourceTree = "<group>"; };
+		22ECE1A32924C77E00C80EF0 /* memorybuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = memorybuffer.h; sourceTree = "<group>"; };
+		22ECE1A42924C77E00C80EF0 /* pointer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pointer.h; sourceTree = "<group>"; };
+		22ECE1A62924C77E00C80EF0 /* inttypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = inttypes.h; sourceTree = "<group>"; };
+		22ECE1A72924C77E00C80EF0 /* stdint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stdint.h; sourceTree = "<group>"; };
+		22ECE1A8292818E500C80EF0 /* libcurl.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurl.tbd; path = usr/lib/libcurl.tbd; sourceTree = SDKROOT; };
+		22ECE1AB292837F800C80EF0 /* http.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = http.hpp; path = ../../../../opt/homebrew/Cellar/boost/1.80.0/include/boost/beast/http.hpp; sourceTree = "<group>"; };
+		22ECE1AC2928389D00C80EF0 /* http.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = http.hpp; path = ../../../../opt/homebrew/Cellar/boost/1.80.0/include/boost/beast/http.hpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		22880A7429098AC900436E07 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22ECE1A9292818E500C80EF0 /* libcurl.tbd in Frameworks */,
+				22880A9029099B3900436E07 /* ApplicationServices.framework in Frameworks */,
+				22880A9329099B3E00436E07 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		22880A6E29098AC900436E07 = {
+			isa = PBXGroup;
+			children = (
+				22ECE1AC2928389D00C80EF0 /* http.hpp */,
+				22ECE17E2924C77E00C80EF0 /* rapidjson */,
+				22ECE17C2924B6F200C80EF0 /* jsmn.h */,
+				22ECE17D2924B6F300C80EF0 /* jsmn.c */,
+				22880A9A290B7D2500436E07 /* VdjConnect.xctestplan */,
+				22880A98290A1FC000436E07 /* Main.cpp */,
+				22880A8429098EA200436E07 /* Internet.hpp */,
+				22880A9529099F2100436E07 /* Log.cpp */,
+				22880A9629099F2100436E07 /* Log.hpp */,
+				22880A8829098EA200436E07 /* JSON.hpp */,
+				22880A8629098EA200436E07 /* TestProvider.cpp */,
+				22880A8529098EA200436E07 /* TestProvider.hpp */,
+				22880A8729098EA200436E07 /* vdjOnlineSource.h */,
+				22880A7829098AC900436E07 /* Products */,
+				22880A7E29098AD200436E07 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		22880A7829098AC900436E07 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				22880A7729098AC900436E07 /* VdjConnect.bundle */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		22880A7E29098AD200436E07 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				22ECE1AB292837F800C80EF0 /* http.hpp */,
+				22ECE1A8292818E500C80EF0 /* libcurl.tbd */,
+				22880A8E2909929200436E07 /* libcurl.4.tbd */,
+				22880A8C2909909700436E07 /* ApplicationServices.framework */,
+				22880A7F29098AD200436E07 /* CoreFoundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		22ECE17E2924C77E00C80EF0 /* rapidjson */ = {
+			isa = PBXGroup;
+			children = (
+				22ECE17F2924C77E00C80EF0 /* fwd.h */,
+				22ECE1802924C77E00C80EF0 /* memorystream.h */,
+				22ECE1812924C77E00C80EF0 /* reader.h */,
+				22ECE1822924C77E00C80EF0 /* prettywriter.h */,
+				22ECE1832924C77E00C80EF0 /* ostreamwrapper.h */,
+				22ECE1842924C77E00C80EF0 /* encodedstream.h */,
+				22ECE1852924C77E00C80EF0 /* filereadstream.h */,
+				22ECE1862924C77E00C80EF0 /* cursorstreamwrapper.h */,
+				22ECE1872924C77E00C80EF0 /* istreamwrapper.h */,
+				22ECE1882924C77E00C80EF0 /* uri.h */,
+				22ECE1892924C77E00C80EF0 /* stringbuffer.h */,
+				22ECE18A2924C77E00C80EF0 /* internal */,
+				22ECE1982924C77E00C80EF0 /* encodings.h */,
+				22ECE1992924C77E00C80EF0 /* schema.h */,
+				22ECE19A2924C77E00C80EF0 /* stream.h */,
+				22ECE19B2924C77E00C80EF0 /* filewritestream.h */,
+				22ECE19C2924C77E00C80EF0 /* rapidjson.h */,
+				22ECE19D2924C77E00C80EF0 /* document.h */,
+				22ECE19E2924C77E00C80EF0 /* allocators.h */,
+				22ECE19F2924C77E00C80EF0 /* writer.h */,
+				22ECE1A02924C77E00C80EF0 /* error */,
+				22ECE1A32924C77E00C80EF0 /* memorybuffer.h */,
+				22ECE1A42924C77E00C80EF0 /* pointer.h */,
+				22ECE1A52924C77E00C80EF0 /* msinttypes */,
+			);
+			path = rapidjson;
+			sourceTree = "<group>";
+		};
+		22ECE18A2924C77E00C80EF0 /* internal */ = {
+			isa = PBXGroup;
+			children = (
+				22ECE18B2924C77E00C80EF0 /* ieee754.h */,
+				22ECE18C2924C77E00C80EF0 /* strtod.h */,
+				22ECE18D2924C77E00C80EF0 /* swap.h */,
+				22ECE18E2924C77E00C80EF0 /* regex.h */,
+				22ECE18F2924C77E00C80EF0 /* diyfp.h */,
+				22ECE1902924C77E00C80EF0 /* biginteger.h */,
+				22ECE1912924C77E00C80EF0 /* strfunc.h */,
+				22ECE1922924C77E00C80EF0 /* itoa.h */,
+				22ECE1932924C77E00C80EF0 /* stack.h */,
+				22ECE1942924C77E00C80EF0 /* dtoa.h */,
+				22ECE1952924C77E00C80EF0 /* clzll.h */,
+				22ECE1962924C77E00C80EF0 /* meta.h */,
+				22ECE1972924C77E00C80EF0 /* pow10.h */,
+			);
+			path = internal;
+			sourceTree = "<group>";
+		};
+		22ECE1A02924C77E00C80EF0 /* error */ = {
+			isa = PBXGroup;
+			children = (
+				22ECE1A12924C77E00C80EF0 /* error.h */,
+				22ECE1A22924C77E00C80EF0 /* en.h */,
+			);
+			path = error;
+			sourceTree = "<group>";
+		};
+		22ECE1A52924C77E00C80EF0 /* msinttypes */ = {
+			isa = PBXGroup;
+			children = (
+				22ECE1A62924C77E00C80EF0 /* inttypes.h */,
+				22ECE1A72924C77E00C80EF0 /* stdint.h */,
+			);
+			path = msinttypes;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		22880A7629098AC900436E07 /* VdjConnect */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22880A7B29098AC900436E07 /* Build configuration list for PBXNativeTarget "VdjConnect" */;
+			buildPhases = (
+				22880A7329098AC900436E07 /* Sources */,
+				22880A7429098AC900436E07 /* Frameworks */,
+				22880A7529098AC900436E07 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VdjConnect;
+			productName = VdjConnect;
+			productReference = 22880A7729098AC900436E07 /* VdjConnect.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		22880A6F29098AC900436E07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1340;
+				TargetAttributes = {
+					22880A7629098AC900436E07 = {
+						CreatedOnToolsVersion = 13.4.1;
+					};
+				};
+			};
+			buildConfigurationList = 22880A7229098AC900436E07 /* Build configuration list for PBXProject "VdjConnect" */;
+			compatibilityVersion = "Xcode 12.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 22880A6E29098AC900436E07;
+			productRefGroup = 22880A7829098AC900436E07 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				22880A7629098AC900436E07 /* VdjConnect */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		22880A7529098AC900436E07 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		22880A7329098AC900436E07 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22F935532B2BF69500B17B90 /* Main.cpp in Sources */,
+				22880A9729099F2100436E07 /* Log.cpp in Sources */,
+				22880A8B29098EA200436E07 /* TestProvider.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		22880A7929098AC900436E07 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		22880A7A29098AC900436E07 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		22880A7C29098AC900436E07 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J7XEXEYE4H;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = /opt/homebrew/Cellar/boost/1.80.0/include;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sparkle.VdjConnect;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Debug;
+		};
+		22880A7D29098AC900436E07 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J7XEXEYE4H;
+				GENERATE_INFOPLIST_FILE = YES;
+				"HEADER_SEARCH_PATHS[arch=*]" = /opt/homebrew/Cellar/boost/1.80.0/include;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sparkle.VdjConnect;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		22880A7229098AC900436E07 /* Build configuration list for PBXProject "VdjConnect" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22880A7929098AC900436E07 /* Debug */,
+				22880A7A29098AC900436E07 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		22880A7B29098AC900436E07 /* Build configuration list for PBXNativeTarget "VdjConnect" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22880A7C29098AC900436E07 /* Debug */,
+				22880A7D29098AC900436E07 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 22880A6F29098AC900436E07 /* Project object */;
+}
