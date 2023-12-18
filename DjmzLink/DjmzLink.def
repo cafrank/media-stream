@@ -1,0 +1,3 @@
+LIBRARY   BTREE
+EXPORTS
+   DllGetClassObject   @1
