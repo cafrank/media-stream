@@ -1,0 +1,51 @@
+
+apiVersion: apps/v1
+kind: Deployment  # Kind of Kubernetes resource we are creating.
+metadata:
+  name: adapter
+  labels:
+    app: adapter
+
+spec:
+  selector:
+    matchLabels:
+      app: adapter
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: adapter
+    spec:
+      containers:
+        - name: adapter
+          image: localhost:32000/adapter   # My docker container image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085   # the port that the container is running on in the cluster
+          env:
+            - name: AUTH_DB_HOST
+              value: mysql
+            - name: AUTH_DB_NAME
+              value: my12
+            - name: AUTH_DB_USER
+              value: my12
+            - name: AUTH_DB_PASSWORD
+              value: mysql
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adapter-svc
+#  creationTimestamp: null
+#  labels:
+#    app: media-svc
+spec:
+  selector:
+    app: adapter
+  ports:
+    - protocol: "TCP"
+      port: 8085
+      targetPort: 8085
+#  type: NodePort
+

@@ -1,0 +1,123 @@
+
+## Parent Project
+    - Install common dependencies and overall dependency management.
+    - Sleuth / Zipkin
+    -
+
+## API Gateway options
+  ## Spring Cloud Gateway
+    - Handle OAuth2 security integration.  Keycloak
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-gateway</artifactId>
+    -
+  ## Kubernetes
+
+## Zipkin / Sleuth.             (Report/Dashboard)
+    docker run --name my-zipkin -d -p 9411:9411 openzipkin/zipkin
+    - Deployed in parent pom using sleuth and zipkin from org.springframework.cloud
+    - `https://zipkin.io/pages/quickstart.html
+
+## Service discovery options
+  ## Eureka Service discovery.  (Simple and standalone)
+    - discovery-server
+    - http://localhost:8761/
+
+  ## Spring Cloud Kubernetes Discovery Server (Integrates with kubernetes)
+    - Alternative discovery-server for kubernetes.
+    - https://docs.spring.io/spring-cloud-kubernetes/docs/current/reference/html/
+    - https://www.densify.com/kubernetes-autoscaling/kubernetes-service-discovery
+
+## Keycloak.
+    docker run --name keycloak-service -p 8180:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:19.0.1 start-dev
+    docker run --name keycloak-service -p 8180:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:latest start-dev
+    docker cloak/keycloak:19.0.1 start-dev
+    http://localhost:8180/admin/master/console/#/Services/clients/e95962d6-256a-4425-90de-5538a452fcf5/sessions
+
+    This works. https://www.youtube.com/watch?v=TrASdBQu2_k   TS: 8:02
+    Identity provider integration https://www.youtube.com/watch?v=P8lpE9nV_Sw
+
+    $ curl -X GET "http://localhost:8180/realms/Services/.well-known/uma2-configuration" | jq
+    http://localhost:8180/realms/Services/protocol/openid-connect/auth?response_type=code&client_id=product-app&state=Y51QXDA-ecvhJQ8RprEHwybk7aV6KFrHqruahyuY39s%3D&redirect_uri=http://localhost:8080/login/oauth2/code/keycloak
+    API Token???:
+    brew install jq
+    curl -v -d "client_id=product-app" -d "client_secret=5c1H4o1jZ9Q0iPST0CBsBQ1mhJVwaRPK" -d "username=grhex" -d "password=foo" \
+        -d "grant_type=password" -X POST \
+        "http://localhost:8180/realms/Services/protocol/openid-connect/token" | \
+        jq -r .access_token;
+
+# Make pkcs12 from chained cert
+openssl pkcs12 -export -in key_lxci_net.pem -inkey my12ss.key.pem -name ‘keycloak’ -out key.lxci.net.p12
+
+## mysql:   https://hub.docker.com/_/mysql
+docker run --net keycloak-network --name order-service-mysql -e MYSQL_ROOT_PASSWORD=mysql -p 3306:3306 -d mysql:latest
+# docker exec -it order-service-mysql bash
+  # bash-4.4# mysql -u root -p
+     pw: mysql
+  # mysql> CREATE DATABASE orderservice;
+  # Query OK, 1 row affected (0.03 sec)
+# docker run -it --network some-network --rm mysql mysql -h order-service-mysql -uexample-user -p
+# docker start order-service-mysql
+# docker stop order-service-mysql
+# docker rm order-service-mysql
+
+## mongodb:   https://hub.docker.com/_/mongo
+docker run --name product-service-mongo -p 27017:27017 -d mongo:latest
+
+## =======================================
+## DATA:
+## =======================================
+[root@c1 ~]# su - postgres
+for i in ARTIST_ID AUDIO_OLDSCHOOL CRATE DJMZ_AUDIO DJMZ_VIDEO DJTOOLS FREE RMX_VIDEO VIDEO VIDEO_SAMPLES VJTOOLS
+     psql -t -c "SELECT array_to_json(array_agg(t)) FROM (SELECT song_id AS songId, title, artist, genre, equalizer AS remix, label, comments AS comment, bpm, year, comments as coverUrl, vms_repo_path AS file FROM vms_songs WHERE vms_repo='$i' AND song_id BETWEEN 0 AND 100000) t;" > /tmp/data-$i-000k-100k.json;
+
+LAST_BATCH=0
+LAST_BATCH=6488
+for i in ARTIST_ID AUDIO_OLDSCHOOL CRATE DJMZ_AUDIO DJTOOLS FREE;
+for i in CRATE ;
+do
+     psql -t -c "SELECT 'test -f /var/www/html/prev/gen3/' || song_id || '.mp3 || ln -s /mnt/disk1/void/music/\"' || vms_repo_path || '\" /var/www/html/prev/gen3/' || song_id || '.mp3' FROM vms_songs WHERE vms_repo='$i' AND batch_id > $LAST_BATCH;" > /tmp/ln-$i.sh;
+done
+     psql -t -c "SELECT array_to_json(array_agg(t)) FROM (SELECT song_id, title, artist, genre, equalizer AS remix, label, comments AS comment, bpm, year, false AS is_video, comments as coverUrl, vms_repo_path AS file FROM vms_songs WHERE vms_repo='$i' AND batch_id > $LAST_BATCH) t;" > /tmp/data-$i.json;
+
+for i in DJMZ_VIDEO RMX_VIDEO VIDEO VIDEO_SAMPLES VJTOOLS;
+do
+     psql -t -c "SELECT array_to_json(array_agg(t)) FROM (SELECT song_id, title, artist, genre, equalizer AS remix, label, comments AS comment, bpm, year, true AS is_video, comments as coverUrl, vms_repo_path AS file FROM vms_songs WHERE vms_repo='$i' AND batch_id > $LAST_BATCH) t;" > /tmp/data-$i.json;
+     psql -t -c "SELECT 'test -f /var/www/html/prev/gen3/' || song_id || '.mp4 || ln -s /mnt/disk2/void/video/\"' || vms_repo_path || '\" /var/www/html/prev/gen3/' || song_id || '.mp4' FROM vms_songs WHERE vms_repo='$i' AND batch_id > $LAST_BATCH;" > /tmp/ln-$i.sh;
+done
+LAST_BATCH=`psql -t -c "SELECT MAX(batch_id) FROM vms_songs;"`
+
+for i in /tmp/ln-*.sh
+do
+    sh $i
+done
+
+for i in DJMZ_VIDEO RMX_VIDEO VIDEO VIDEO_SAMPLES VJTOOLS     ARTIST_ID AUDIO_OLDSCHOOL CRATE DJMZ_AUDIO DJTOOLS FREE;
+for i in VIDEO ;
+do
+    echo "====== $i =======";
+    curl -X POST -H "Content-Type: application/json" -d @<(ssh root@169.45.92.99 cat /tmp/data-$i.json) http://localhost:8084/api/media/bulk
+done
+
+/mnt/disk2/void/video
+/mnt/disk3/void/music
+
+Forward the POD:
+  kubectl -n djmz port-forward keycloak-0 --address=0.0.0.0 8443:8443
+
+  export POD_NAME=$(kubectl get pods --namespace apisix -l "app.kubernetes.io/name=apisix-dashboard,app.kubernetes.io/instance=apisix-dashboard" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace apisix $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  kubectl --namespace apisix port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+  export POD_NAME=$(kubectl get pods --namespace apisix -l "app.kubernetes.io/name=apisix,app.kubernetes.io/instance=apisix" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace apisix $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  sudo kubectl --namespace apisix port-forward $POD_NAME 80:$CONTAINER_PORT
+  export CONTAINER_PORT=$(kubectl get pod --namespace apisix $POD_NAME -o jsonpath="{.spec.containers[0].ports[1].containerPort}")
+  sudo kubectl --namespace apisix port-forward $POD_NAME 443:$CONTAINER_PORT
+
+Forward the SERVICE:   (Better.  Persistent on pod restart):
+k get svc -o wide
+k port-forward service/keycloak-svc --address=0.0.0.0 8443:8443 &
+kubectl -n apisix      port-forward service/apisix-dashboard     --address="0.0.0.0" 9080:80 &
+kubectl -n kube-system port-forward service/kubernetes-dashboard --address="0.0.0.0" 10443:443 &
+sudo kubectl -n apisix port-forward service/apisix-gateway       --address="0.0.0.0"   80:80
+sudo kubectl -n apisix port-forward service/apisix-gateway       --address="0.0.0.0"  443:443

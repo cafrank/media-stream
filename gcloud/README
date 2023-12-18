@@ -1,0 +1,42 @@
+# https://www.youtube.com/watch?v=-fbH5Qs3QXU
+
+===========================
+Configure kubectl for GKE
+===========================
+
+gcloud auth login
+
+gcloud projects list
+gcloud config set project my-map-project-186104			# "My Map Project"
+
+gcloud compute machine-types list > machine-types.log
+
+gcloud container clusters create --help
+
+Enable GKE: https://console.developers.google.com/apis/api/container.googleapis.com/overview?project=my-map-project-186104
+
+gcloud container get-server-config --zone us-central1-a
+
+  --subnetrork=SUBNETWORK
+
+gcloud container clusters create gke-dj-pool \
+  --cluster-version 1.28.3-gke.1203001 \
+  --disk-size 200  \
+  --num-nodes 1    \
+  --create-subnetwork name=cluster-subnet,range=/24
+  --machine-type e2-small \
+  --no-enable-cloud-endpoints \
+  --no-enable-cloud-logging \
+  --no-enable-cloud-monitoring \
+  --zone us-central1-a 
+
+===================================================
+Configure kubectl for GKE. Switch metween microk8s
+===================================================
+
+cp ~/.kube/config ~/.kube/config.microk8s
+
+gcloud container clusters get-credential gke-dj-pool --zone us-central1-a
+cp ~/.kube/config ~/.kube/config.gke
+
+kubectl  

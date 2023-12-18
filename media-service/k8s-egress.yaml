@@ -1,0 +1,15 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internet-egress
+spec:
+  podSelector:
+    matchLabels:
+      networking/allow-internet-egress: "Xtrue"
+
+# Egress for all
+#  podSelector: { }
+  egress:
+    - {}
+  policyTypes:
+    - Egress

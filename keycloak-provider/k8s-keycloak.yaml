@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: StatefulSet  # Kind of Kubernetes resource we are creating.
+metadata:
+  name: keycloak
+
+spec:
+  selector:
+    matchLabels:
+      app: keycloak
+  serviceName: keycloak-svc
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: keycloak
+        networking/allow-internet-egress: "true"
+    spec:
+      containers:
+        - name: keycloak
+          image: localhost:32000/kclatest     # My docker container image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8443   # the port that the container is running on in the cluster
+          env:
+            - name: AUTH_DB_HOST
+              value: mysql
+            - name: AUTH_DB_NAME
+              value: my12
+            - name: AUTH_DB_USER
+              value: my12
+            - name: AUTH_DB_PASSWORD
+              value: mysql
+
+---
+apiVersion: v1
+kind: Service  # Kind of Kubernetes resource we are creating.  Load balancer
+metadata:
+  name: keycloak-svc
+
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - protocol: "TCP"
+      port: 8443    # Port the service is running on in the cluster.
+      targetPort: 8443  # Port exposed by the service
+#  type: NodePort
+

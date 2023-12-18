@@ -1,0 +1,66 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: djmz-ingress-https
+  namespace: djmz
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/connection-proxy-header: "keep-alive"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4 256k"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+#    nginx.ingress.kubernetes.io/rewrite-target: /
+
+#helm install apisix apisix/apisix
+#helm install apisix-dashboard apisix/apisix-dashboard
+
+spec:
+  ingressClassName: apisix
+  tls:
+    - hosts:
+        - key.lxci.net
+      secretName: lxci-net-tls
+
+  rules:
+    - host: key.lxci.net
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak-svc
+                port:
+                  number: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: djmz-ingress-http
+  namespace: djmz
+  annotations:
+
+spec:
+  ingressClassName: apisix
+  rules:
+    - host: api.djmz.com
+      http:
+        paths:
+          - path: /api/media
+            pathType: Prefix
+            backend:
+              service:
+                name: media-svc
+                port:
+                  number: 8084
+      # curl http://my12-adapter.lxci.net/api/auth/user/like/fr
+    - host: my12-adapter.lxci.net
+      http:
+        paths:
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: adapter-svc
+                port:
+                  number: 8085

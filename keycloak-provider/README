@@ -1,0 +1,295 @@
+
+Apigee: https://www.youtube.com/watch?v=vGe38icp0n4
+  API proxy that can do a bunch of stuff including gateway/security
+  = API Geteway plus keycloak?
+
+Anthos: https://www.youtube.com/watch?v=Qtwt7QcW4J8&t=181s
+  Superset of Istio.
+  Anthos Service Mesh is Google’s fully-supported distribution of Istio
+  - https://medium.com/@kasiarun/demystifying-istio-and-anthos-service-mesh-on-gke-ff009c7c5179
+
+
+public class CustomUserStorageProviderFactory
+        implements UserStorageProviderFactory<CustomUserStorageProvider> {
+
+
+
+public class CustomUserStorageProvider implements UserStorageProvider,
+        UserLookupProvider,
+        CredentialInputValidator,
+        UserQueryProvider {
+
+
+mkdir -p target/classes/META-INF/services
+echo org.sparkle.auth.kc.provider.FakeUserStorageProviderFactory >>  target/classes/META-INF/services/org.keycloak.storage.UserStorageProviderFactory
+Compile classes
+(cd target/classes/ && jar cvf /tmp/cf-provider.jar *)
+cp  /tmp/cf-provider.jar ${kc.home.dir}/providers/
+
+./kc.sh build
+./kc.sh start-dev --http-port 8180  
+
+cp /tmp/cf-provider.jar ../providers
+./kc.sh start-dev --http-port 8180
+./kc.sh build
+kc.sh show-config
+./kc.sh show-config
+./kc.sh start-dev --http-port 8180
+vi ../conf/README.md
+vi ../conf/keycloak.conf
+./kc.sh start-dev --http-port 8180
+
+
+
+===========================================
+SSL: https://swjm.blog/deploying-keycloak-with-ssl-in-just-10-minutes-46073e5cf699
+===========================================
+Create cert om mac: certtool c
+Export from keychain as Certificate.p12
+Convert to pem: https://stackoverflow.com/questions/15144046/converting-pkcs12-certificate-into-pem-using-openssl
+$ openssl pkcs12 -in Certificates.p12 -out my12ss.crt.pem -clcerts -nokeys
+$ openssl pkcs12 -in Certificates.p12 -out my12ss.key.pem -nocerts -nodes
+$ bin/kc.sh start-dev start-dev --http-port 8180 --https-certificate-file=cert/my12ss.crt.pem --https-certificate-key-file=cert/my12ss.key.pem
+
+# Docker using p12 cert in server.keystrore
+    $ openssl pkcs12 -export -in key_lxci_net.pem -inkey my12ss.key.pem -name ‘keycloak’ -out key.lxci.net.p12
+      Passwd: password
+    ADD key.lxci.net.p12            conf/server.keystore
+    ADD target/org.sparkle-auth.jar providers/cf-provider.jar
+    RUN /opt/keycloak/bin/kc.sh build
+
+
+export JAVA_HOME=`/usr/libexec/java_home`
+sudo keytool -importcert -file cert/osafo.crt.pem -alias osafo -keystore \
+ /Users/cfrank/Library/Java/JavaVirtualMachines/openjdk-18.0.2/Contents/Home/lib/security/cacerts
+# Solve the mismatch issuer by adding -hostname-url
+$ bin/kc.sh start-dev --http-port 8180 --https-certificate-file=cert/key.lxci.net.crt.pem --https-certificate-key-file=cert/my12ss.key.pem --hostname-url=https://key.lxci.net:8443
+
+Remember OAuth2 callback urls when changing keycloak urls!
+ - https://github.com/settings/applications/1988411
+ - https://console.cloud.google.com/apis/credentials?project=my-map-project-186104
+
+
+===========================================
+     Kubernetes  Install
+===========================================
+$ brew install kubectl
+$ brew install miniube
+$ minikube start
+$ eval $(minikube docker-env)   # Connect minikube to local docker repo.
+
+$ cd ~/git/kc/keycloak-20.0.1
+$ docker build -t mykeycloak .
+$ docker images
+$ docker network create keycloak-network
+$ docker run -it --name mykeycloak -p 8180:8080 mykeycloak start-dev
+$ bin/kc.sh start-dev --http-port 8180 --https-certificate-file=cert/key.lxci.net.crt.pem --https-certificate-key-file=cert/my12ss.key.pem --hostname-url=https://key.lxci.net:8443
+$ docker run -it --net keycloak-network --name mykeycloak -p 8443:8443 mykeycloak start-dev \
+        --https-certificate-file=cert/key.lxci.net.crt.pem \
+        --https-certificate-key-file=cert/my12ss.key.pem   \
+        --hostname-url=https://key.lxci.net:8443
+
+===========================================
+     Kubernetes Deployment:     https://www.youtube.com/watch?v=7o7e8OAAWyg
+===========================================
+# Start with:
+$ docker build -t kclatest .
+$ docker run -it --name key.lxci.net -p 8443:8443 kclatest start-dev
+$ kubectl apply -f k8s-deploy.yaml
+$ kubectl get deployments
+$ kubectl delete deployment keycloak
+$ kubectl get pods
+$ kubectl logs keycloak-5dccb97f9b-pqr6q
+$ kubectl apply -f k8s-service.yaml
+$ kubectl get service                               #kubectl get svc
+$ kubectl get nodes -o wide
+$ minikube ip          # Note the same IP
+minikube dashboard
+
+
+% cd ~/git/kus
+% kubectl apply -n demo -f k8s-deploy.yaml
+% kubectl apply -n demo -f k8s-service.yaml
+
+% minikube addons enable ingress     # Important: TS: 11:00 https://www.youtube.com/watch?v=80Ew_fsV4rM
+% minikube start --cpus 4 --memory 3933m
+% kubectl get nodes -o wide
+
+% cd ~/git/services/product-service
+% mvn spring-boot:build-image            # ==> docker.io/library/product-service:0.0.1-SNAPSHOT
+% docker tag product-service:0.0.1-SNAPSHOT cafrank/sb-media-app    # seems to build crap
+
+% docker build -t media .
+% docker tag media cafrank/sb-media-app
+
+% docker push cafrank/sb-media-app
+% kubectl create service clusterip media --tcp=8084:8084 --dry-run=client -o=yaml >> k8s-media-svc.yaml
+% kubectl create ns djmz
+% kubectl -n djmz apply -f k8s-media-app.yaml
+% kubectl -n djmz apply -f k8s-media-svc.yaml
+% kubectl -n djmz get all
+% kubectl -n djmz get svc
+% kubectl -n djmz describe     svc/media
+% kubectl -n djmz port-forward svc/media 8084:8084
+
+% kubectl -n djmz get pod
+kubectl -n djmz logs media-6f7d6c869c-46fd7
+kubectl -n djmz get svc
+kubectl get nodes -o wide    # Get INTERNAL-IP
+
+http://192.168.49.2:30181/   Not working  See: https://github.com/kubernetes/minikube/issues/11193
+                             minikube start --driver=docker --ports=127.0.0.1:30181:30181
+                             minikube start --cpus 4 --memory 3933m --ports=127.0.0.1:32760-32767:32760-32767
+                             docker port minikube
+minikube -n djmz service media-svc --url
+
+Run a shell in the mongo db or media containers of the media pod
+  kubectl -n djmz
+
+  kubectl -n djmz exec -it media-6cb5dcc6d-8xbh5 -c media -- /bin/bash
+
+Get logs from the mongo db or media containers of the media pod
+  kubectl -n djmz logs media-6cb5dcc6d-8xbh5 -c mongo
+  kubectl -n djmz logs media-6cb5dcc6d-8xbh5 -c media
+
+kubectl -n djmz get ing
+kubectl -n djmz describe ing djmz-ingress
+
+kubectl -n ingress-nginx get pods
+kubectl -n ingress-nginx logs ingress-nginx-controller-5959f988fd-rvxr2
+
+Languages: Silodity, Go, and Rust
+
+APISIX TLS
+========================================================================
+kubectl -n apisix exec -it apisix-... -- wget --header="Host: key.lxci.net" https://localhost:9443
+kubectl -n apisix exec -it apisix-... -- openssl s_client -host localhost -port 9443 -servername key.lxci.net -verify 1
+
+TLS: https://shocksolution.com/2018/12/14/creating-kubernetes-secrets-using-tls-ssl-as-an-example/
+kubectl create secret tls lxci-net-tls --key="/Users/cfrank/git/kc/keycloak-20.0.1/cert/my12ss.key.pem" --cert="/Users/cfrank/git/kc/keycloak-20.0.1/cert/key.lxci.net.crt.pem"
+kubectl get    secrets
+kubectl delete secret/lxci-net-tls  # Remake in the right namespace
+kubectl -n djmz get secret lxci-net-tls -o yaml > k8s-tls-lxci-secret.yaml
+
+=============
+
+export DOCKER_TLS_VERIFY="0"
+export DOCKER_HOST="tcp://192.168.1.34:32001"
+export DOCKER_CERT_PATH="/Users/cfrank/.minikube/certs"
+export MINIKUBE_ACTIVE_DOCKERD="minikube"
+unset  MINIKUBE_ACTIVE_DOCKERD
+
+
+https://microk8s.io/docs/registry-images
+microk8s ctr images ls
+microk8s ctr image pull --plain-http localhost:32000/adapter:latest
+
+kubectl -n djmz get secret lxci-net-tls -o yaml
+
+create user 'my12'@'%' identified by 'mysql';
+create database my12;
+grant all on my12.* to 'my12'@'%'  ;
+
+docker run -it --rm -v ${HOME}:/root -v ${PWD}:/work -w /work --net host alpine bash
+
+k9s DASHBOARD
+===============
+microk8s.kubectl config view --raw > $HOME/.kube/config
+k9s
+k get deployment spin -o yaml | sed "s/replicas:.*/replicas: 31/g" | k apply -f -
+
+K8S DASHBOARD
+===============
+
+microk8s kubectl port-forward -n kube-system service/kubernetes-dashboard --address="0.0.0.0" 10443:443
+https://127.0.0.1:10443.
+
+
+Apache APISIX: https://apisix.apache.org/docs/helm-chart/apisix/
+================================================================
+helm repo add apisix https://charts.apiseven.com
+helm repo update
+helm install apisix apisix/apisix                     --create-namespace --namespace apisix
+helm install apisix-dashboard apisix/apisix-dashboard --create-namespace --namespace apisix
+  export POD_NAME=$(kubectl get pods --namespace apisix -l "app.kubernetes.io/name=apisix-dashboard,app.kubernetes.io/instance=apisix-dashboard" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace apisix $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace apisix port-forward $POD_NAME 8080:$CONTAINER_PORT
+  kubectl --namespace apisix port-forward apisix-dashboard-679cf887f-j687r 8080:9000 --address='0.0.0.0'   # Sweet!
+  http://api.djmz.com:8000/
+  microk8s disable ingress  # Apisix replaces the default ngnix ingress
+
+Need to port forward the apisix pod (apisix-58c6c96bd8-rgndp) for INGRESS INBOUND
+  kubectl get pod --namespace apisix apisix-58c6c96bd8-rgndp -o jsonpath="{.spec.containers[0].ports}"
+  kubectl get pod --namespace apisix apisix-58c6c96bd8-rgndp -o jsonpath="{.spec.containers[0].ports[0].containerPort}"
+  9080
+  sudo kubectl --namespace apisix port-forward apisix-58c6c96bd8-rgndp --address='0.0.0.0'  80:9080
+  sudo kubectl --namespace apisix port-forward apisix-58c6c96bd8-rgndp --address='0.0.0.0' 443:9443
+
+Pods:
+keycloak: k get pod keycloak-0 -o jsonpath="{.spec.containers[0].ports}"
+    [{"containerPort":8443,"protocol":"TCP"}]
+    k port-forward keycloak-0 --address=0.0.0.0 8443:8443
+    https://key.lxci.net:8443
+
+apisix: kubectl get pod --namespace apisix apisix-58c6c96bd8-c7sr9 -o jsonpath="{.spec.containers[0].ports}"
+    {"containerPort":9080,"name":"http","protocol":"TCP"},
+    {"containerPort":9443,"name":"tls","protocol":"TCP"},
+    {"containerPort":9180,"name":"admin","protocol":"TCP"}
+
+# helm uninstall apisix --namespace apisix
+# https://apisix.apache.org/docs/ingress-controller/tutorials/manage-ingress-certificates-with-cert-manager/
+helm install apisix apisix/apisix \
+  --namespace apisix \
+  --set gateway.tls.enabled=true \
+  --set gateway.type=NodePort \
+  --set ingress-controller.enabled=true \
+  --set ingress-controller.config.apisix.serviceNamespace=apisix
+
+Use k9s to start a shell on the apisix-58c6c96bd8-c7sr9 pod
+apt install net-tools curl
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.1/cert-manager.yaml
+k apply -f cert.yaml
+
+Apache APISIX Dashboaed Create SSL
+================================================================
+$ openssl pkcs12 -info -in key.lxci.net.p12   # Cert
+$ openssl pkcs12 -in key.lxci.net.p12 -nodes -nocerts   # Private key
+$ openssl pkcs12 -in key.lxci.net.p12 -nodes -nocerts   # Private key
+
+Apache APISIX INGRESS: https://apisix.apache.org/blog/2022/09/09/kubernetes-ingress-with-apisix/
+================================================================
+Better to port-forward the service !!!:
+    sudo kubectl -n apisix port-forward service/apisix-gateway --address="0.0.0.0"   80:80
+    sudo kubectl -n apisix port-forward service/apisix-gateway --address="0.0.0.0"  443:443
+
+
+
+# Linkerd: https://linkerd.io/2.12/getting-started/
+kubectl get -n djmz deploy -o yaml \
+  | linkerd inject - \
+  | kubectl apply -f -
+
+linkerd viz dashboard
+
+
+Kubeflow:	https://charmed-kubeflow.io/docs/get-started-with-charmed-kubeflow
+================================================================
+When reinstalling
+$ rm -rf ~/.local/share/juju
+$ juju bootstrap microk8s
+$ juju add-model kubeflow
+$ juju deploy kubeflow --trust  --channel=1.7/stable
+
+
+
+Kubernetes NVIDIA gpu-operator
+================================================================
+microk8s enable dashboard gpu
+https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/install-gpu-operator.html#install-gpu-operator
+https://thenewstack.io/tutorial-deploy-the-nvidia-gpu-operator-on-kubernetes-based-on-containerd-runtime/
+Test it:
+$ kubectl run gpu-test --rm -t -i --restart=Never --image=nvcr.io/nvidia/cuda:10.1-base-ubuntu18.04 nvidia-smi
+See Also: TORCHRUN (ELASTIC LAUNCH).   https://pytorch.org/docs/stable/elastic/run.html
+Run:AI https://www.youtube.com/watch?v=48xUHYh0CoE
+

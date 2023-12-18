@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment  # Kind of Kubernetes resource we are creating.
+metadata:
+  name: media
+  labels:
+    app: media
+
+spec:
+  selector:
+    matchLabels:
+      app: media
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: media
+    spec:
+      containers:
+        - name: media
+          image: localhost:32000/media   # My docker container image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084   # the port that the container is running on in the cluster
+        - name: mongo
+          image: mongo:latest    # MongoDB docker container image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 27018   # the port that the container is running on in the cluster
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: media-svc
+#  creationTimestamp: null
+#  labels:
+#    app: media-svc
+spec:
+  selector:
+    app: media
+  ports:
+    - protocol: "TCP"
+      port: 8084
+      targetPort: 8084
+#  type: NodePort

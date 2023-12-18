@@ -1,0 +1,12 @@
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/ApiUserStorageProvider.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/modle/UserAttr.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/FakeUserStorageProviderFactory.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/modle/MyUserModel.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/ApiUserStorageProviderFactory.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/Main.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/My12UserStorageProvider.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/repository/UserMy12Repository.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/My12UserStorageProviderFactory.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/modle/UserMy12.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/repository/UserAttrRepository.java
+/home/cfrank/git/media-stream/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/FakeUserStorageProvider.java

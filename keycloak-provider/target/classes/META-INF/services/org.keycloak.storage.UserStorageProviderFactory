@@ -1,0 +1,3 @@
+org.sparkle.auth.kc.provider.ApiUserStorageProviderFactory
+org.sparkle.auth.kc.provider.FakeUserStorageProviderFactory
+org.sparkle.auth.kc.provider.My12UserStorageProviderFactory

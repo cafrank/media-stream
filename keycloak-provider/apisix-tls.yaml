@@ -1,0 +1,10 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixTls
+metadata:
+  name: sample-tls
+spec:
+  hosts:
+  - key.lxci.net
+  secret:
+    name: lxci-net-tls
+    namespace: djmz

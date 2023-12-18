@@ -1,0 +1,4 @@
+/home/cfrank/git/media-stream/keycloak-provider/src/test/java/org/sparkle/auth/kc/repository/ContainersEnvironment.java
+/home/cfrank/git/media-stream/keycloak-provider/src/test/java/org/sparkle/auth/kc/repository/MySqlTestContainer.java
+/home/cfrank/git/media-stream/keycloak-provider/src/test/java/org/sparkle/auth/kc/repository/UserMy12RepositoryTest.java
+/home/cfrank/git/media-stream/keycloak-provider/src/test/java/org/sparkle/auth/kc/provider/FakeUserStorageProviderTest.java

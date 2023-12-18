@@ -1,0 +1,4 @@
+org/sparkle/auth/kc/repository/MySqlTestContainer.class
+org/sparkle/auth/kc/repository/UserMy12RepositoryTest.class
+org/sparkle/auth/kc/provider/FakeUserStorageProviderTest.class
+org/sparkle/auth/kc/repository/ContainersEnvironment.class

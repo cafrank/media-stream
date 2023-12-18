@@ -1,0 +1,29 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: foo
+  namespace: djmz
+spec:
+  http:
+    - name: route-1
+      match:
+        hosts:
+          - api.djmz.com
+        paths:
+          - "/api/media/*"
+      backends:
+        - serviceName: media-svc
+        - servicePort: 8084
+    - name: route-2
+      match:
+        hosts:
+          - my12-adapter.lxci.net
+        paths:
+          - "/api/auth/*"
+      backends:
+        - serviceName: adapter-svc
+        - servicePort: 8085
+
+# https://apisix.apache.org/docs/ingress-controller/deployments/minikube/
+# helm install apisix-dashboard apisix/apisix-dashboard
+# kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v0.5.0/standard-install.yaml
