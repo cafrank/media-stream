@@ -45,18 +45,15 @@ gcloud components install gke-gcloud-auth-plugin
 #  --no-enable-cloud-endpoints \
 #  --no-enable-cloud-monitoring \
 ===================================================
-Configure kubectl for GKE. Switch metween microk8s
+Configure kubectl for GKE. Switch between microk8s
 ===================================================
 
 cp ~/.kube/config ~/.kube/config.microk8s
-
-gcloud container clusters get-credential gke-dj-pool --zone us-central1-a  # Seems deprecated
-
-Ubuntu 22.04 Try this:
-https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
-sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin
-gke-gcloud-auth-plugin --version
-
+gcloud container clusters get-credential gke-dj-pool --zone us-central1-a  # Error
+    Ubuntu 22.04 Try this:
+    https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+    sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin
+    gke-gcloud-auth-plugin --version
 gcloud container clusters get-credentials gke-dj-pool --zone us-central1-a
 cp ~/.kube/config ~/.kube/config.gke
 
@@ -64,4 +61,15 @@ $ kubectl get node
 NAME                                         STATUS   ROLES    AGE   VERSION
 gke-gke-dj-pool-default-pool-2cbb58e2-gxzj   Ready    <none>   20m   v1.28.3-gke.1203001
 YESSSS !!!
+
+
+===================================================
+Kubernetes Gateway API for GKE. https://cloud.google.com/kubernetes-engine/docs/how-to/deploying-gateways
+===================================================
+kubectl -n djmz apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml
+gcloud container clusters update gke-dj-pool --gateway-api=standard --zone us-central1-a
+To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-central1-a/gke-dj-pool?project=my-map-project-186104
+
+gcloud container clusters describe gke-dj-pool￼ --zone us-central1-a --format json
+kubectl get gatewayclass
 
