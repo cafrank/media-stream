@@ -23,20 +23,45 @@ gcloud container clusters create gke-dj-pool \
   --cluster-version 1.28.3-gke.1203001 \
   --disk-size 200  \
   --num-nodes 1    \
-  --create-subnetwork name=cluster-subnet,range=/24
+  --enable-ip-alias \
+  --create-subnetwork name=cluster-subnet,range=/24 \
   --machine-type e2-small \
-  --no-enable-cloud-endpoints \
-  --no-enable-cloud-logging \
-  --no-enable-cloud-monitoring \
-  --zone us-central1-a 
+  --zone us-central1-a
+Note: The Pod address range limits the maximum size of the cluster. Please refer to https://cloud.google.com/kubernetes-engine/docs/how-to/flexible-pod-cidr to learn how to optimize IP address allocation.
+Creating cluster gke-dj-pool in us-central1-a... Cluster is being health-checked (master is healthy)...done.
+Created [https://container.googleapis.com/v1/projects/my-map-project-186104/zones/us-central1-a/clusters/gke-dj-pool].
+To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-central1-a/gke-dj-pool?project=my-map-project-186104
 
+CRITICAL: ACTION REQUIRED: gke-gcloud-auth-plugin, which is needed for continued use of kubectl, was not found or is not executable. Install gke-gcloud-auth-plugin for use with kubectl by following https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+kubeconfig entry generated for gke-dj-pool.
+
+NAME         LOCATION       MASTER_VERSION      MASTER_IP    MACHINE_TYPE  NODE_VERSION        NUM_NODES  STATUS
+gke-dj-pool  us-central1-a  1.28.3-gke.1203001  34.16.78.20  e2-small      1.28.3-gke.1203001  1          RUNNING
+
+gcloud components install gke-gcloud-auth-plugin
+
+
+#  --no-enable-cloud-logging \
+#  --no-enable-cloud-endpoints \
+#  --no-enable-cloud-monitoring \
 ===================================================
 Configure kubectl for GKE. Switch metween microk8s
 ===================================================
 
 cp ~/.kube/config ~/.kube/config.microk8s
 
-gcloud container clusters get-credential gke-dj-pool --zone us-central1-a
+gcloud container clusters get-credential gke-dj-pool --zone us-central1-a  # Seems deprecated
+
+Ubuntu 22.04 Try this:
+https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin
+gke-gcloud-auth-plugin --version
+
+gcloud container clusters get-credentials gke-dj-pool --zone us-central1-a
 cp ~/.kube/config ~/.kube/config.gke
 
-kubectl  
+$ kubectl get node
+NAME                                         STATUS   ROLES    AGE   VERSION
+gke-gke-dj-pool-default-pool-2cbb58e2-gxzj   Ready    <none>   20m   v1.28.3-gke.1203001
+YESSSS !!!
+
