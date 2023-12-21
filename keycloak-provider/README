@@ -51,6 +51,15 @@ $ openssl pkcs12 -in Certificates.p12 -out my12ss.crt.pem -clcerts -nokeys
 $ openssl pkcs12 -in Certificates.p12 -out my12ss.key.pem -nocerts -nodes
 $ bin/kc.sh start-dev start-dev --http-port 8180 --https-certificate-file=cert/my12ss.crt.pem --https-certificate-key-file=cert/my12ss.key.pem
 
+============================================
+Kubernetes TLS secret for Gatewat or Ingres
+============================================
+openssl pkcs12 -in key.lxci.net.p12 -out lxci.crt.pem - -clcerts -nokeys
+openssl pkcs12 -in key.lxci.net.p12 -out lxci.key.pem -nocerts -nodes
+kubectl -n djmz create secret tls lxci-net-tls --key="lxci.key.pem" --cert="lxci.crt.pem"
+kubectl -n djmz get secret lxci-net-tls -o yaml > k8s-key-lxci.net.yaml
+
+
 # Docker using p12 cert in server.keystrore
     $ openssl pkcs12 -export -in key_lxci_net.pem -inkey my12ss.key.pem -name ‘keycloak’ -out key.lxci.net.p12
       Passwd: password

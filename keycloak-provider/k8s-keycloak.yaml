@@ -17,19 +17,22 @@ spec:
     spec:
       containers:
         - name: keycloak
-          image: localhost:32000/kclatest     # My docker container image
+          image: cafrank/kclatest     # My docker container image
+          #image: localhost:32000/kclatest     # My docker container image
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8443   # the port that the container is running on in the cluster
           env:
+            - name: AUTH_DB_URL
+              value: jdbc:postgresql:34.82.33.112
             - name: AUTH_DB_HOST
-              value: mysql
+              value: 34.82.33.112
             - name: AUTH_DB_NAME
-              value: my12
+              value: postgres
             - name: AUTH_DB_USER
-              value: my12
+              value: postgres
             - name: AUTH_DB_PASSWORD
-              value: mysql
+              value: spock
 
 ---
 apiVersion: v1
