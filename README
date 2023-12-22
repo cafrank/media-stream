@@ -83,6 +83,7 @@ for i in DJMZ_VIDEO RMX_VIDEO VIDEO VIDEO_SAMPLES VJTOOLS;
 do
      psql -t -c "SELECT array_to_json(array_agg(t)) FROM (SELECT song_id, title, artist, genre, equalizer AS remix, label, comments AS comment, bpm, year, true AS is_video, comments as coverUrl, vms_repo_path AS file FROM vms_songs WHERE vms_repo='$i' AND batch_id > $LAST_BATCH) t;" > /tmp/data-$i.json;
      psql -t -c "SELECT 'test -f /var/www/html/prev/gen3/' || song_id || '.mp4 || ln -s /mnt/disk2/void/video/\"' || vms_repo_path || '\" /var/www/html/prev/gen3/' || song_id || '.mp4' FROM vms_songs WHERE vms_repo='$i' AND batch_id > $LAST_BATCH;" > /tmp/ln-$i.sh;
+     psql -t -c "SELECT 'test -f /var/www/html/prev/gen3/' || song_id || '.mp4 || ln -s /mnt/disk1/void/music/\"' || vms_repo_path || '\" /var/www/html/prev/gen3/' || song_id || '.mp3' FROM vms_songs WHERE vms_repo='$i' AND batch_id > $LAST_BATCH;" > /tmp/ln-$i.sh;
 done
 LAST_BATCH=`psql -t -c "SELECT MAX(batch_id) FROM vms_songs;"`
 
@@ -91,7 +92,9 @@ do
     sh $i
 done
 
-for i in DJMZ_VIDEO RMX_VIDEO VIDEO VIDEO_SAMPLES VJTOOLS     ARTIST_ID AUDIO_OLDSCHOOL CRATE DJMZ_AUDIO DJTOOLS FREE;
+for i in
+
+     ARTIST_ID AUDIO_OLDSCHOOL CRATE DJMZ_AUDIO DJTOOLS FREE;
 for i in VIDEO ;
 do
     echo "====== $i =======";

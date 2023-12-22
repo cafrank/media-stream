@@ -40,10 +40,9 @@ gke-dj-pool  us-central1-a  1.28.3-gke.1203001  34.16.78.20  e2-small      1.28.
 
 gcloud components install gke-gcloud-auth-plugin
 
+gcloud container clusters update gke-dj-pool --zone us-central1-a --logging=NONE --monitoring=NONE  # This rebuilds the entire cluster!
+gcloud container clusters update gke-dj-pool --zone us-central1-a --logging=SYSTEM --monitoring=SYSTEM
 
-#  --no-enable-cloud-logging \
-#  --no-enable-cloud-endpoints \
-#  --no-enable-cloud-monitoring \
 ===================================================
 Configure kubectl for GKE. Switch between microk8s
 ===================================================
@@ -73,3 +72,15 @@ To inspect the contents of your cluster, go to: https://console.cloud.google.com
 gcloud container clusters describe gke-dj-pool￼ --zone us-central1-a --format json
 kubectl get gatewayclass
 
+kubectl -n djmz get gateway
+kubectl -n djmz describe gateway media-gateway
+kubectl -n djmz get gateway media-gateway -o=jsonpath="{.status.addresses[0].value}"
+34.128.159.129
+kubectl -n djmz describe httproute auth-route
+kubectl -n djmz get gcpgatewaypolicy
+
+Debugging:  Look for errors.
+kubectl -n djmz get gateway media-gateway -o=jsonpath="{.status}" | jq
+
+
+kubectl -n djmz logs media-f75dd549c-5dhwt

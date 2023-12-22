@@ -2,6 +2,10 @@
 # kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml
 
 # kubectl -n djmz port-forward service/media-gateway-istio --address=0.0.0.0 8080:80
+# kubectl -n djmx create secret generic lxci-net-tls --from-file=key.lxci.net.p12 --from-literal=password=changeit
+
+#tls:
+#  mode: Terminate, Passthrough
 
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: Gateway
@@ -14,12 +18,25 @@ spec:
   #  - value: ingress.istio-gateways.svc.cluster.local
   #    type: Hostname
   listeners:
-    - name: prod-web
+    - name: http
       port: 80
       protocol: HTTP
       allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: lxci-net-tls
+      allowedRoutes:
         kinds:
           - kind: HTTPRoute
+        namespaces:
+          from: All
+
 #      namespaces:
 #        from: Selector
 #        selector:
@@ -27,44 +44,92 @@ spec:
 #            expose-apps: "true"
 
 ---
-apiVersion: gateway.networking.k8s.io/v1beta1
+# https://medium.com/swlh/google-api-gateway-and-load-balancer-cdn-9692b7a976df
 kind: HTTPRoute
-metadata:
-  name: media-route
-  namespace: djmz
-spec:
-  parentRefs:
-    - kind: Gateway
-      name: media-gateway
-      namespace: djmz
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /api/media/*
-    - backendRefs:
-        - name: media-svc
-          port: 8084
-
----
 apiVersion: gateway.networking.k8s.io/v1beta1
-kind: HTTPRoute
 metadata:
   name: auth-route
   namespace: djmz
+  labels:
+    gateway: media-gateway
 spec:
+#  hostnames:
+#  - "key.lxci.net"
   parentRefs:
-    - kind: Gateway
-      name: media-gateway
-      namespace: djmz
+  - name: media-gateway
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /admin/*
-    - backendRefs:
-        - name: keycloak-svc
-          port: 8443
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /admin
+    backendRefs:
+    - name: keycloak-svc
+      port: 8443
+      #group: net.gke.io
+      #kind: ServiceImport
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api
+    backendRefs:
+    - name: media-svc
+      port: 8084
+
+---
+#kind: GCPGatewayPolicy
+#apiVersion: networking.gke.io/v1
+#metadata:
+#  name: gp-tls-12
+#  namespace: djmz
+#spec:
+#  default:
+#    sslPolicy: sslp-tls-12
+#  targetRef:
+#    group: "gateway.networking.k8s.io"
+#    kind: Gateway
+#    name: media-gateway
+#    namespace: djmz
+
+#apiVersion: gateway.networking.k8s.io/v1beta1
+#kind: HTTPRoute
+#metadata:
+#  name: media-route
+#  namespace: djmz
+#spec:
+#  parentRefs:
+#    - kind: Gateway
+#      name: media-gateway
+#      namespace: djmz
+#  rules:
+#    - matches:
+#        - path:
+#            type: PathPrefix
+#            value: /api/media/*
+#    - backendRefs:
+#        - name: media-svc
+#          port: 8084
+
+---
+#apiVersion: gateway.networking.k8s.io/v1beta1
+#kind: HTTPRoute
+#metadata:
+#  name: auth-route
+#  namespace: djmz
+#  labels:
+#    gateway: media-gateway
+#spec:
+#  parentRefs:
+#  - kind: Gateway
+#    name: media-gateway
+#    namespace: djmz
+#  rules:
+#  - matches:
+#    - path:
+#      type: PathPrefix
+#      value: /admin/*
+#    - backendRefs:
+#      - name: keycloak-svc
+#        port: 8443
 
 ---
 #apiVersion: v1
