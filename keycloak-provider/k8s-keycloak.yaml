@@ -23,6 +23,18 @@ spec:
           ports:
             - containerPort: 8443   # the port that the container is running on in the cluster
           env:
+            - name: DB_VENDOR
+              value: POSTGRES
+            - name: DB_ADDR
+              value: 34.82.33.112
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_DATABASE
+              value: postgres
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: spock
             - name: AUTH_DB_URL
               value: jdbc:postgresql:34.82.33.112
             - name: AUTH_DB_HOST

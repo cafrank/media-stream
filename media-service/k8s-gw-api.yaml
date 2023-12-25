@@ -14,6 +14,7 @@ metadata:
   namespace: djmz
 spec:
   gatewayClassName: gke-l7-global-external-managed
+#  gatewayClassName: gke-l7-rilb
   #  addresses:
   #  - value: ingress.istio-gateways.svc.cluster.local
   #    type: Hostname
@@ -67,13 +68,14 @@ spec:
       port: 8443
       #group: net.gke.io
       #kind: ServiceImport
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /api
-    backendRefs:
-    - name: media-svc
-      port: 8084
+#  - matches:
+#    - path:
+#        type: PathPrefix
+#        value: /api
+#    backendRefs:
+#    - name: media-svc
+#      port: 8084
+
 
 ---
 #kind: GCPGatewayPolicy

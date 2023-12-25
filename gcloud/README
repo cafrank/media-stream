@@ -48,7 +48,8 @@ Resize GKE cluster. # Nodes
 ===========================
 gcloud config set container/cluster gke-dj-pool
 gcloud container node-pools list --zone us-central1-a
-gcloud container clusters resize gke-dj-pool --zone us-central1-a --node-pool default-pool --num-nodes 4
+gcloud container clusters resize gke-dj-pool --zone us-central1-a --node-pool default-pool --num-nodes 2
+gcloud container clusters delete gke-dj-pool --zone us-central1-a
 
 ===================================================
 Configure kubectl for GKE. Switch between microk8s
@@ -112,3 +113,7 @@ helm install apisix apisix/apisix --namespace ingress-apisix \
   export NODE_IP=$(kubectl get nodes --namespace ingress-apisix -o jsonpath="{.items[0].status.addresses[0].address}")
   echo http://$NODE_IP:$NODE_PORT
 http://10.45.185.3:32579
+
+
+kubectl -n djmz run httpbin --image kennethreitz/httpbin --port 80
+kubectl -n djmz expose pod httpbin --port 80

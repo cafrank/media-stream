@@ -17,8 +17,8 @@
 #==================================================
 mvn clean package -DskipTests=true   && \
 docker build -t kclatest .  && \
-docker tag kclatest cafrank/kclatest
-docker push cafrank/kclatest
+docker tag kclatest cafrank/kclatest && \
+docker push cafrank/kclatest && \
 kubectl -n djmz delete -f k8s-keycloak.yaml && \
 kubectl -n djmz apply  -f k8s-keycloak.yaml && \
 kubectl -n djmz get pod

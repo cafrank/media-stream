@@ -6,10 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="6bcc3f69-bcd5-4f95-bef9-e6facf2f64a6" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README" beforeDir="false" afterPath="$PROJECT_DIR$/README" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/foo" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/gcloud/README" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/README" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/media-service/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/build.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gcloud/httpbin-route.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/httpbin-route.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/build.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/k8s-keycloak.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/k8s-keycloak.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/media-service/k8s-gw-api.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/k8s-gw-api.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/media-service/k8s-media.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/k8s-media.yaml" afterDir="false" />
     </list>

@@ -1,0 +1,12 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: http-hc-config
+  namespace: djmz
+
+spec:
+  healthCheck:
+    checkIntervalSec: 1500
+    port: 8084
+    type: HTTPS
+    requestPath: /

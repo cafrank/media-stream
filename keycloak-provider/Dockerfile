@@ -10,7 +10,8 @@ ENV KC_METRICS_ENABLED=true
 
 # Configure a database vendor
 # ENV KC_DB=mysql
-ENV KC_DB=dev-file
+# ENV KC_DB=dev-file
+ENV KC_DB=postgres
 
 WORKDIR /opt/keycloak
 # for demonstration purposes only, please make sure to use proper certificates in production instead
@@ -20,17 +21,35 @@ WORKDIR /opt/keycloak
 #  Passwd: password
 ADD key.lxci.net.p12            conf/server.keystore
 ADD target/org.sparkle-auth.jar providers/cf-provider.jar
-RUN /opt/keycloak/bin/kc.sh build
+
+
+# The database vendor.
+#db=postgres
+
+# The username of the database user.
+#db-username=keycloak
+
+# The password of the database user.
+#db-password=password
+
+# The full database JDBC URL. If not provided, a default URL is set based on the selected database vendor.
+#db-url=jdbc:postgresql://localhost/keycloak
+
+RUN /opt/keycloak/bin/kc.sh build --db=postgres
 
 FROM ubuntu:latest
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install -y apt-utils
-RUN apt-get update && apt-get install -y iputils-ping
+RUN apt-get install -y iputils-ping
 RUN apt-get update && apt-get -qq -y install curl
-RUN apt-get update && apt-get install net-tools
+RUN apt-get install net-tools
 
 FROM quay.io/keycloak/keycloak:latest
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
+RUN echo "db=postgres"                      >> /opt/keycloak/conf/keycloak.conf
+RUN echo "db-username=postgres"             >> /opt/keycloak/conf/keycloak.conf
+RUN echo "db-username=spock"                >> /opt/keycloak/conf/keycloak.conf
+RUN echo "db-url=jdbc:postgresql://34.82.33.112:5432/postgres" >> /opt/keycloak/conf/keycloak.conf
 
 ENV KEYCLOAK_ADMIN=admin
 ENV KEYCLOAK_ADMIN_PASSWORD=admin
@@ -45,4 +64,14 @@ ENV KC_HOSTNAME_STRICT_HTTPS=false
 # ENV KC_DB_USERNAME=my12
 # ENV KC_DB_PASSWORD=mysql
 # ENV KC_HOSTNAME=localhost
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev"]
+
+ENV KC_DB_VENDOR=postgres
+ENV KC_DB_URL=jdbc:postgresql://34.82.33.112:5432/postgres
+ENV KC_DB_USERNAME=postgres
+ENV KC_DB_PASSWORD=spock
+ENV KC_HOSTNAME=34.82.33.112
+
+#ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start"]
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start",  "--db=postgres", "--db-url=jdbc:postgresql://34.82.33.112:5432/postgres"]
+#ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev"]
+#/opt/keycloak/bin/kc.sh start --db=postgres --db-url=jdbc:postgresql://34.82.33.112:5432/postgres --db-username=postgres --db-password=spock
