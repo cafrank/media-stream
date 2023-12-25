@@ -43,6 +43,13 @@ gcloud components install gke-gcloud-auth-plugin
 gcloud container clusters update gke-dj-pool --zone us-central1-a --logging=NONE --monitoring=NONE  # This rebuilds the entire cluster!
 gcloud container clusters update gke-dj-pool --zone us-central1-a --logging=SYSTEM --monitoring=SYSTEM
 
+===========================
+Resize GKE cluster. # Nodes
+===========================
+gcloud config set container/cluster gke-dj-pool
+gcloud container node-pools list --zone us-central1-a
+gcloud container clusters resize gke-dj-pool --zone us-central1-a --node-pool default-pool --num-nodes 4
+
 ===================================================
 Configure kubectl for GKE. Switch between microk8s
 ===================================================
@@ -84,3 +91,24 @@ kubectl -n djmz get gateway media-gateway -o=jsonpath="{.status}" | jq
 
 
 kubectl -n djmz logs media-f75dd549c-5dhwt
+
+https://kubernetes.io/docs/concepts/services-networking/service/
+
+===================================================
+APISIX in GKE. https://apisix.apache.org/docs/ingress-controller/deployments/gke/
+===================================================
+
+https://apisix.apache.org/docs/ingress-controller/tutorials/configure-ingress-with-gateway-api/
+kubectl create ns ingress-apisix
+helm install apisix apisix/apisix --namespace ingress-apisix \
+--set dashboard.enabled=true \
+--set gateway.type=NodePort \
+--set ingress-controller.enabled=true \
+--set ingress-controller.config.kubernetes.ingressVersion=networking/v1beta1 \
+--set ingress-controller.config.apisix.serviceNamespace=ingress-apisix \
+--set ingress-controller.config.kubernetes.enableGatewayAPI=true
+
+  export NODE_PORT=$(kubectl get --namespace ingress-apisix -o jsonpath="{.spec.ports[0].nodePort}" services apisix-gateway)
+  export NODE_IP=$(kubectl get nodes --namespace ingress-apisix -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+http://10.45.185.3:32579

@@ -1,0 +1,28 @@
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  annotations:
+  name: httpbin-route
+  namespace: djmz
+spec:
+  hostnames:
+  - httpbin.lxci.net
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: media-gateway
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: httpbin
+      port: 81
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /

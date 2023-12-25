@@ -1,0 +1,29 @@
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: auth-route
+  namespace: djmz
+spec:
+  hostnames:
+  - "key.lxci.net"
+  parentRefs:
+  - kind: Gateway
+    name: media-gateway
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+      - name: keycloak-svc
+        port: 8443
+
+
+  # - matches:
+  #   - path:
+  #       type: PathPrefix
+  #       value: /
+  #   - backendRefs:
+  #       - name: httpbin
+  #         port: 80
+
