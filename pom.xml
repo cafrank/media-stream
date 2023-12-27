@@ -25,6 +25,7 @@
 		<module>keycloak-provider</module>
 		<module>auth-service</module>
 		<module>media-service</module>
+		<module>hello</module>
 	<!--
 		<module>api-gateway</module>
 		<module>discovery-server</module>

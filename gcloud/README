@@ -21,10 +21,11 @@ gcloud container get-server-config --zone us-central1-a
 
 gcloud container clusters create gke-dj-pool \
   --cluster-version 1.28.3-gke.1203001 \
-  --disk-size 200  \
-  --num-nodes 1    \
+  --disk-size 100  \
+  --num-nodes 4    \
   --enable-ip-alias \
   --create-subnetwork name=cluster-subnet,range=/24 \
+  --gateway-api=standard \
   --machine-type e2-small \
   --zone us-central1-a
 Note: The Pod address range limits the maximum size of the cluster. Please refer to https://cloud.google.com/kubernetes-engine/docs/how-to/flexible-pod-cidr to learn how to optimize IP address allocation.
@@ -77,6 +78,10 @@ kubectl -n djmz apply -f https://github.com/kubernetes-sigs/gateway-api/releases
 gcloud container clusters update gke-dj-pool --gateway-api=standard --zone us-central1-a
 To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-central1-a/gke-dj-pool?project=my-map-project-186104
 
+cd /home/cfrank/git/media-stream/keycloak-provider
+kubectl -n djmz create secret tls lxci-net-tls --key="lxci.key.pem" --cert="lxci.crt.pem"
+
+
 gcloud container clusters describe gke-dj-pool￼ --zone us-central1-a --format json
 kubectl get gatewayclass
 
@@ -117,3 +122,5 @@ http://10.45.185.3:32579
 
 kubectl -n djmz run httpbin --image kennethreitz/httpbin --port 80
 kubectl -n djmz expose pod httpbin --port 80
+kubectl -n djmz apply -f httpbin-route.yaml
+watch kubectl -n djmz describe httproute httpbin-route

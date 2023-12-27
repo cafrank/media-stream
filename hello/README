@@ -1,0 +1,6 @@
+https://iamgique.medium.com/deploy-springboot-to-gke-from-scratch-in-7-minutes-c6d3534f69be
+
+docker build --no-cache -t hello .
+docker tag hello cafrank/hello
+docker push cafrank/hello
+

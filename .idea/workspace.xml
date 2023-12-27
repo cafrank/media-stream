@@ -5,14 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6bcc3f69-bcd5-4f95-bef9-e6facf2f64a6" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gcloud/README" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/README" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gcloud/httpbin-route.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/httpbin-route.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keycloak-provider/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keycloak-provider/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/build.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keycloak-provider/k8s-keycloak.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/k8s-keycloak.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/media-service/k8s-gw-api.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/k8s-gw-api.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/media-service/k8s-media.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/k8s-media.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/lxci.crt.pem" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/lxci.crt.pem" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/lxci.key.pem" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/lxci.key.pem" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,29 +78,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.Build auth-service.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.AuthServiceApplicationTests.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FakeUserStorageProviderTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FakeUserStorageProviderTest.getUserById.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.MediaServiceApplicationTests.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.UserMy12RepositoryTest.executor&quot;: &quot;Run&quot;,
-    &quot;Maven.media-stream [install,--projects...].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary&quot;: &quot;JUnit5&quot;,
-    &quot;com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5&quot;: &quot;&quot;,
-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;openjdk-19&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/cfrank/git/media-stream/media-service&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.project.maven.importing&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Build auth-service.executor": "Run",
+    "JUnit.AuthServiceApplicationTests.executor": "Run",
+    "JUnit.FakeUserStorageProviderTest.executor": "Run",
+    "JUnit.FakeUserStorageProviderTest.getUserById.executor": "Run",
+    "JUnit.HelloApplicationTests.testGetHelloWithPathVariableSuccess.executor": "Debug",
+    "JUnit.MediaServiceApplicationTests.executor": "Run",
+    "JUnit.UserMy12RepositoryTest.executor": "Run",
+    "Maven.media-stream [install,--projects...].executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
+    "jdk.selected.JAVA_MODULE": "openjdk-19",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/cfrank/git/media-stream/media-service",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "reference.settings.project.maven.importing"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/media-service" />
@@ -115,7 +115,7 @@
       <recent name="org.sparkle.auth.kc.provider" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.FakeUserStorageProviderTest">
+  <component name="RunManager" selected="JUnit.HelloApplicationTests.testGetHelloWithPathVariableSuccess">
     <configuration name="AuthServiceApplicationTests" type="JUnit" factoryName="JUnit">
       <module name="auth-service" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -154,6 +154,22 @@
       <option name="PACKAGE_NAME" value="org.sparkle.auth.kc.provider" />
       <option name="MAIN_CLASS_NAME" value="org.sparkle.auth.kc.provider.FakeUserStorageProviderTest" />
       <option name="METHOD_NAME" value="getUserById" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HelloApplicationTests.testGetHelloWithPathVariableSuccess" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hello" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="sparkle.com.hello.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="sparkle.com.hello" />
+      <option name="MAIN_CLASS_NAME" value="sparkle.com.hello.HelloApplicationTests" />
+      <option name="METHOD_NAME" value="testGetHelloWithPathVariableSuccess" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -202,6 +218,7 @@
     </configuration>
     <list>
       <item itemvalue="JUnit.AuthServiceApplicationTests" />
+      <item itemvalue="JUnit.HelloApplicationTests.testGetHelloWithPathVariableSuccess" />
       <item itemvalue="JUnit.MediaServiceApplicationTests" />
       <item itemvalue="JUnit.FakeUserStorageProviderTest" />
       <item itemvalue="JUnit.FakeUserStorageProviderTest.getUserById" />
@@ -209,6 +226,7 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.HelloApplicationTests.testGetHelloWithPathVariableSuccess" />
         <item itemvalue="JUnit.FakeUserStorageProviderTest" />
         <item itemvalue="JUnit.MediaServiceApplicationTests" />
         <item itemvalue="JUnit.FakeUserStorageProviderTest.getUserById" />
@@ -233,5 +251,31 @@
       <updated>1702134505760</updated>
     </task>
     <servers />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-core" />
+    <option featureType="dependencySupport" implementationName="java:org.jboss.resteasy:resteasy-core" />
+    <option featureType="dependencySupport" implementationName="java:jakarta.validation:jakarta.validation-api" />
+    <option featureType="dependencySupport" implementationName="java:io.projectreactor:reactor-core" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.data:spring-data-commons" />
+    <option featureType="dependencySupport" implementationName="executable:kubectl" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.cloud:spring-cloud-context" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-webmvc" />
+    <option featureType="dependencySupport" implementationName="java:org.projectlombok:lombok" />
+    <option featureType="dependencySupport" implementationName="executable:docker" />
+    <option featureType="dependencySupport" implementationName="java:jakarta.persistence:jakarta.persistence-api" />
+    <option featureType="dependencySupport" implementationName="java:jakarta.ws.rs:jakarta.ws.rs-api" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.boot:spring-boot" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/hello/src/main/java/sparkle/com/hello/HelloApplication.java</url>
+          <line>19</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
