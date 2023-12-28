@@ -18,29 +18,31 @@ spec:
       containers:
         - name: media
           #image: localhost:32000/media   # My docker container image
-          image: cafrank/media   # My docker container image
-          imagePullPolicy: IfNotPresent
+          image: cafrank/media:latest   # My docker container image
+          imagePullPolicy: Always
           ports:
-            - containerPort: 8084   # the port that the container is running on in the cluster
-        - name: mongo
-          image: mongo:latest    # MongoDB docker container image
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 27018   # the port that the container is running on in the cluster
+            - containerPort: 8080   # the port that the container is running on in the cluster
+#        - name: mongo
+#          image: mongo:latest    # MongoDB docker container image
+#          imagePullPolicy: IfNotPresent
+#          ports:
+#            - containerPort: 27018   # the port that the container is running on in the cluster
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: media-svc
-#  labels:
-#    app: media-svc
+  labels:
+    app: media
+  annotations:
+    cloud.google.com/neg: '{"ingress":true}'
 spec:
   selector:
     app: media
   ports:
     - protocol: "TCP"
-      port: 8084
+      port: 8080
         #type: NodePort
         #type: LoadBalancer
         #targetPort: 8084

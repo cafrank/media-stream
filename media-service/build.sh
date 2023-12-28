@@ -19,3 +19,4 @@ docker push cafrank/media && \
 kubectl -n djmz delete -f k8s-media.yaml && \
 kubectl -n djmz apply  -f k8s-media.yaml && \
 kubectl -n djmz get pod
+
