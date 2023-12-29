@@ -1,3 +1,13 @@
+===========================================
+Keycloak Helm on GKE
+===========================================
+kubectl create ns keycloak
+helm install -n keycloak keycloak-db bitnami/postgresql-ha
+    kubectl port-forward --namespace keycloak svc/keycloak-db-postgresql-ha-pgpool 5432:5432 &
+    psql -h 127.0.0.1 -p 5432 -U postgres -d postgres
+    kubectl run keycloak-db-postgresql-ha-client --rm --tty -i --restart='Never' --namespace keycloak --image docker.io/bitnami/postgresql-repmgr:16.1.0-debian-11-r12 --env="PGPASSWORD=$POSTGRES_PASSWORD"  \
+        --command -- psql -h keycloak-db-postgresql-ha-pgpool -p 5432 -U postgres -d postgres
+kubectl -n keycloak apply -f keycloak.yaml
 
 Apigee: https://www.youtube.com/watch?v=vGe38icp0n4
   API proxy that can do a bunch of stuff including gateway/security
@@ -301,4 +311,9 @@ Test it:
 $ kubectl run gpu-test --rm -t -i --restart=Never --image=nvcr.io/nvidia/cuda:10.1-base-ubuntu18.04 nvidia-smi
 See Also: TORCHRUN (ELASTIC LAUNCH).   https://pytorch.org/docs/stable/elastic/run.html
 Run:AI https://www.youtube.com/watch?v=48xUHYh0CoE
+
+
+================================================================
+Connect Keycloak & GKE: https://www.strongdm.com/connect/keycloak-gke#:~:text=Keycloak%20is%20a%20free%20single,on%20access%20that%20Keycloak%20provides.
+================================================================
 

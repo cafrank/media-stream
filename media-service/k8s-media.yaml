@@ -4,7 +4,6 @@ metadata:
   name: media
   labels:
     app: media
-
 spec:
   selector:
     matchLabels:
@@ -22,19 +21,19 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080   # the port that the container is running on in the cluster
-#        - name: mongo
-#          image: mongo:latest    # MongoDB docker container image
-#          imagePullPolicy: IfNotPresent
-#          ports:
-#            - containerPort: 27018   # the port that the container is running on in the cluster
+        - name: mongo
+          image: mongo:latest    # MongoDB docker container image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 27018   # the port that the container is running on in the cluster
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: media-svc
-  labels:
-    app: media
+#  labels:
+#    app: media
   annotations:
     cloud.google.com/neg: '{"ingress":true}'
 spec:

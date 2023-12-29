@@ -1,8 +1,9 @@
 #FROM --platform=linux/arm64/v8 arm64v8/openjdk:20-slim-buster
-#FROM openjdk:20-slim-buster
-FROM ubuntu:22.04
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends openjdk-21-jdk-headless
+FROM openjdk:20-slim-buster
+#FROM openjdk:17.0.2-slim-buster
+# FROM ubuntu:22.04
+# RUN apt-get update \
+#     && apt-get install -y --no-install-recommends openjdk-21-jdk-headless
 
 ARG DEBIAN_FRONTEND=noninteractive
 EXPOSE 8080
@@ -13,8 +14,7 @@ EXPOSE 8080
 #    && apt clean
 
 RUN mkdir -pv /opt/djmz/media
-ADD target/media-service-0.0.1-SNAPSHOT.jar /opt/djmz/media/app.jar
-
+# ADD target/media-service-0.0.1-SNAPSHOT.jar /opt/djmz/media/app.jar
+ADD target/media-service-*-SNAPSHOT.jar /opt/djmz/media/app.jar
 WORKDIR /opt/djmz/media
-
 ENTRYPOINT [ "java", "-jar", "app.jar" ]

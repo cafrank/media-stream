@@ -74,4 +74,11 @@ ENV KC_HOSTNAME=34.82.33.112
 #ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start"]
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start",  "--db=postgres", "--db-url=jdbc:postgresql://34.82.33.112:5432/postgres"]
 #ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev"]
-#/opt/keycloak/bin/kc.sh start --db=postgres --db-url=jdbc:postgresql://34.82.33.112:5432/postgres --db-username=postgres --db-password=spock
+
+# /opt/keycloak/bin/kc.sh build --db=postgres
+# /opt/keycloak/bin/kc.sh start --db=postgres --db-url=jdbc:postgresql://34.82.33.112:5432/postgres --db-username=postgres --db-password=spock
+# /opt/keycloak/bin/kc.sh show-config
+- health-enabled=true > health-enabled=false
+	- metrics-enabled=true > metrics-enabled=false
+
+ kc.db-url, kc.db-username, kc.db-password, kc.hostname, kc.hostname-strict, kc.hostname-strict-https, kc.http-enabled

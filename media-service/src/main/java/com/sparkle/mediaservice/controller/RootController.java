@@ -13,22 +13,20 @@ import java.util.List;
 @Slf4j
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
-@RequestMapping("/api/account")
+@RequestMapping("/")
 @RequiredArgsConstructor
-public class AccountController {
-
-    private final AccountService accountService;
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public void create(@RequestBody AccountRequest accountRequest) {
-        accountService.create(accountRequest);
-    }
+public class RootController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<AccountResponse> getAll() {
-        log.info("getAllAccounts");
-        return accountService.getAll();
+    public String getRoot() {
+        log.info("getRoot");
+        return "OK";
+    }
+
+    @GetMapping(value = "version")
+    @ResponseStatus(HttpStatus.OK)
+    public String getError() {
+        return "2";
     }
 }

@@ -18,7 +18,6 @@ Enable GKE: https://console.developers.google.com/apis/api/container.googleapis.
 gcloud container get-server-config --zone us-central1-a
 
   --subnetrork=SUBNETWORK
-
 gcloud container clusters create gke-dj-pool \
   --cluster-version 1.28.3-gke.1203001 \
   --disk-size 100  \
@@ -26,8 +25,11 @@ gcloud container clusters create gke-dj-pool \
   --enable-ip-alias \
   --create-subnetwork name=cluster-subnet,range=/24 \
   --gateway-api=standard \
-  --machine-type e2-small \
-  --zone us-central1-a
+  --machine-type e2-small  --zone us-central1-a
+
+  --machine-type e2-medium --zone us-west8-a
+
+
 Note: The Pod address range limits the maximum size of the cluster. Please refer to https://cloud.google.com/kubernetes-engine/docs/how-to/flexible-pod-cidr to learn how to optimize IP address allocation.
 Creating cluster gke-dj-pool in us-central1-a... Cluster is being health-checked (master is healthy)...done.
 Created [https://container.googleapis.com/v1/projects/my-map-project-186104/zones/us-central1-a/clusters/gke-dj-pool].
@@ -79,6 +81,7 @@ gcloud container clusters update gke-dj-pool --gateway-api=standard --zone us-ce
 To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-central1-a/gke-dj-pool?project=my-map-project-186104
 
 cd /home/cfrank/git/media-stream/keycloak-provider
+kubectl create ns djmz
 kubectl -n djmz create secret tls lxci-net-tls --key="lxci.key.pem" --cert="lxci.crt.pem"
 
 

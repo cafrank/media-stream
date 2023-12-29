@@ -13,7 +13,7 @@
 # hub.docker.com: docker login --username=cafrank
 #==================================================
 mvn clean package -DskipTests=true   && \
-docker build -t media .  && \
+docker build --no-cache -t media .  && \
 docker tag media cafrank/media && \
 docker push cafrank/media && \
 kubectl -n djmz delete -f k8s-media.yaml && \
