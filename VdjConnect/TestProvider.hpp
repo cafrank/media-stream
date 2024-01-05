@@ -19,13 +19,13 @@ private:
     string lastSearch = "";
     
     // FIXME: Config files
-    string kcBaseUrl   = "https://key.lxci.net:8443";           // keycloak server
-//    string kcBaseUrl   = "https://key.lxci.net";                // keycloak server
+//    string kcBaseUrl   = "https://key.lxci.net:8443";           // keycloak server
+    string kcBaseUrl   = "https://key.lxci.net";                // keycloak server
     string kcLoguotUrl = kcBaseUrl + "/realms/Services/protocol/openid-connect/logout";
     string kcTokenUrl  = kcBaseUrl + "/realms/Services/protocol/openid-connect/token";
 
-//    string apiMediaBase = "http://api.djmz.com/api/media";    // API Gateway with keycloak
-    string apiMediaBase = "http://api.djmz.com:8080/api/media"; // API Gateway with keycloak
+    string apiMediaBase = "http://api.djmz.com/api/media";    // API Gateway with keycloak
+//    string apiMediaBase = "http://api.djmz.com:8080/api/media"; // API Gateway with keycloak
 //    string apiMediaBase = "http://localhost:8084/api/media";    // Direct API. No auth
     string accessToken;
     string refreshToken;
