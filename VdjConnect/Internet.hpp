@@ -82,7 +82,8 @@ string Internet::downloadString(string url, string accessToken)
         curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 6L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeFunction);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
-        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "");
+//        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "/tmp/cookies.txt");
+//        curl_easy_setopt(curl, CURLOPT_COOKIEJAR,  "/tmp/cookies.txt");
         curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 

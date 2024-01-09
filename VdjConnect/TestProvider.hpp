@@ -19,23 +19,32 @@ private:
     string lastSearch = "";
     
     // FIXME: Config files
-//    string kcBaseUrl   = "https://key.lxci.net:8443";           // keycloak server
     string kcBaseUrl   = "https://key.lxci.net";                // keycloak server
-    string kcLoguotUrl = kcBaseUrl + "/realms/Services/protocol/openid-connect/logout";
-    string kcTokenUrl  = kcBaseUrl + "/realms/Services/protocol/openid-connect/token";
+    string kcRealm     = "Services";
+    string kcClient    = "product-app";
+    string kcSecret    = "KaRQn5fPuZv4XA5GrYWQxj4SgUfgBNtV";
+    string kcLoguotUrl = kcBaseUrl + "/realms/"+ kcRealm +"/protocol/openid-connect/logout";
+    string kcTokenUrl  = kcBaseUrl + "/realms/"+ kcRealm +"/protocol/openid-connect/token";
 
-    string apiMediaBase = "http://api.djmz.com/api/media";    // API Gateway with keycloak
+    string apiMediaBase = "https://www.key.lxci.net/api/media";    // API Gateway with keycloak
 //    string apiMediaBase = "http://api.djmz.com:8080/api/media"; // API Gateway with keycloak
 //    string apiMediaBase = "http://localhost:8084/api/media";    // Direct API. No auth
     string accessToken;
     string refreshToken;
     size_t accessTokenExpire;
+    string apiClientAndSecret()
+    {
+        string url = "client_id=product-app&client_secret=KaRQn5fPuZv4XA5GrYWQxj4SgUfgBNtV";
+        return url;
+    }
     string apiAuthParam()
     {
-        string url = "client_id=product-app&scope=openid" +
+        string url = "client_id=product-app&scope=openid&client_secret=KaRQn5fPuZv4XA5GrYWQxj4SgUfgBNtV" +
             (accessToken.length() ? "&access_token="+ accessToken : "");
         return url;
     }
+    
+
 
 public:
 	HRESULT VDJ_API OnGetPluginInfo(TVdjPluginInfo8* infos) override;
