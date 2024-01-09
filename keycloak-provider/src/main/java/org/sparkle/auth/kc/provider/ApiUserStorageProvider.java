@@ -157,7 +157,7 @@ public class ApiUserStorageProvider implements UserStorageProvider,
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realmModel, Map<String, String> map, Integer integer, Integer integer1) {
-        log.info("searchForUserStream(" + map + ")");
+        log.info("searchForUserStream(" + map + "): Unimplemented");
         return null;
     }
 

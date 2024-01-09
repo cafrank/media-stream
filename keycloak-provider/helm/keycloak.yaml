@@ -11,8 +11,8 @@ spec:
       targetPort: 8443
   selector:
     app: keycloak
-  type: ClusterIP
-  clusterIP: None
+  #type: ClusterIP
+  #clusterIP: None
 ---
 apiVersion: apps/v1
 kind: Deployment

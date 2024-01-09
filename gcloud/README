@@ -17,17 +17,24 @@ Enable GKE: https://console.developers.google.com/apis/api/container.googleapis.
 
 gcloud container get-server-config --zone us-central1-a
 
-  --subnetrork=SUBNETWORK
 gcloud container clusters create gke-dj-pool \
   --cluster-version 1.28.3-gke.1203001 \
   --disk-size 100  \
   --num-nodes 4    \
   --enable-ip-alias \
-  --create-subnetwork name=cluster-subnet,range=/24 \
-  --gateway-api=standard \
   --machine-type e2-small  --zone us-central1-a
 
-  --machine-type e2-medium --zone us-west8-a
+  --create-subnetwork name=cluster-subnet,range=/24 \
+  --machine-type e2-medium --zone us-central1-a
+  --subnetrork=SUBNETWORK
+  --gateway-api=standard \
+
+https://console.cloud.google.com/kubernetes/workload_/gcloud/us-central1-a/gke-dj-pool?project=my-map-project-186104
+NAME         LOCATION       MASTER_VERSION      MASTER_IP      MACHINE_TYPE  NODE_VERSION        NUM_NODES  STATUS
+gke-dj-pool  us-central1-a  1.28.3-gke.1203001  35.202.195.97  e2-small      1.28.3-gke.1203001  4          RUNNING
+
+
+gcloud artifacts repositories create cfrepo --repository-format=apt  --location us-central1
 
 
 Note: The Pod address range limits the maximum size of the cluster. Please refer to https://cloud.google.com/kubernetes-engine/docs/how-to/flexible-pod-cidr to learn how to optimize IP address allocation.
@@ -111,11 +118,25 @@ https://apisix.apache.org/docs/ingress-controller/tutorials/configure-ingress-wi
 kubectl create ns ingress-apisix
 helm install apisix apisix/apisix --namespace ingress-apisix \
 --set dashboard.enabled=true \
---set gateway.type=NodePort \
+--set gateway.type=LoadBalancer \
 --set ingress-controller.enabled=true \
 --set ingress-controller.config.kubernetes.ingressVersion=networking/v1beta1 \
 --set ingress-controller.config.apisix.serviceNamespace=ingress-apisix \
---set ingress-controller.config.kubernetes.enableGatewayAPI=true
+--set ingress-controller.config.kubernetes.enableGatewayAPI=true \
+--set apisix.ssl.enabled=true
+
+helm uninstall apisix --namespace ingress-apisix
+ADMIN_API_VERSION=v3
+helm install apisix apisix/apisix --namespace ingress-apisix \
+  --create-namespace --namespace ingress-apisix \
+  --set dashboard.enabled=true \
+  --set apisix.ssl.enabled=true \
+  --set gateway.type=LoadBalancer \
+  --set ingress-controller.enabled=true \
+  --set ingress-controller.config.apisix.serviceNamespace=ingress-apisix \
+  --set ingress-controller.config.apisix.adminAPIVersion=$ADMIN_API_VERSION \
+  --set ingress-controller.config.kubernetes.enableGatewayAPI=true
+
 
   export NODE_PORT=$(kubectl get --namespace ingress-apisix -o jsonpath="{.spec.ports[0].nodePort}" services apisix-gateway)
   export NODE_IP=$(kubectl get nodes --namespace ingress-apisix -o jsonpath="{.items[0].status.addresses[0].address}")
@@ -127,3 +148,27 @@ kubectl -n djmz run httpbin --image kennethreitz/httpbin --port 80
 kubectl -n djmz expose pod httpbin --port 80
 kubectl -n djmz apply -f httpbin-route.yaml
 watch kubectl -n djmz describe httproute httpbin-route
+
+kubectl -n djmz apply -f ../gcloud/m-apisix.yaml
+kubectl -n djmz describe apisixroute    # Faster config application than GKE gw api.
+
+# Find and delete unused global IP addresses:
+#   Google Cloud IN_USE_ADDRESSES quota exceeded.
+https://console.cloud.google.com/networking/addresses/list?project=my-map-project-186104
+https://console.cloud.google.com/net-services/loadbalancing/advanced/forwardingRules/list?project=my-map-project-186104
+
+---------------------------------------------
+TLS ERROR.  Critical for HTTPS/SSL connection: https://apisix.apache.org/docs/apisix/next/ssl-protocol/
+---------------------------------------------
+When the dashboard adds the cert, it shows two FQDNs key.lxci.net and www.key.lxci.net.  This scauses TLA error???
+curl -X PUT borg:9180/apisix/admin/ssls/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -d '
+{
+     "cert" : "'"$(cat lxci.crt.pem)"'",
+     "key": "'"$(cat lxci.key.pem)"'",
+     "snis": ["www.key.lxci.net"],
+     "ssl_protocols": [
+         "TLSv1.2"
+     ]
+}'
+
+

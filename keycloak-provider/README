@@ -69,6 +69,18 @@ openssl pkcs12 -in key.lxci.net.p12 -out lxci.key.pem -nocerts -nodes
 kubectl -n djmz create secret tls lxci-net-tls --key="lxci.key.pem" --cert="lxci.crt.pem"
 kubectl -n djmz get secret lxci-net-tls -o yaml > k8s-key-lxci.net.yaml
 
+curl http://gw.lxci.net:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+     "cert" : "'"$(cat lxci.crt.pem )"'",
+     "key": "'"$(cat lxci.key.pem)"'",
+     "snis": ["key.lxci.net"],
+     "ssl_protocols": [
+         "TLSv1.1",
+         "TLSv1.2",
+         "TLSv1.3"
+     ]
+}'
 
 # Docker using p12 cert in server.keystrore
     $ openssl pkcs12 -export -in key_lxci_net.pem -inkey my12ss.key.pem -name ‘keycloak’ -out key.lxci.net.p12

@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet  # Kind of Kubernetes resource we are creating.
 metadata:
   name: keycloak
-
 spec:
   selector:
     matchLabels:
@@ -17,11 +16,20 @@ spec:
     spec:
       containers:
         - name: keycloak
-          image: cafrank/kclatest     # My docker container image
+          image: us-central1-docker.pkg.dev/my-map-project-186104/cfrepo/kclatest
+          #image: cafrank/kclatest     # My docker container image
           #image: localhost:32000/kclatest     # My docker container image
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8443   # the port that the container is running on in the cluster
+            - containerPort: 8080   # start-dev
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            periodSeconds: 3
           env:
             - name: DB_VENDOR
               value: POSTGRES
@@ -35,16 +43,22 @@ spec:
               value: postgres
             - name: DB_PASSWORD
               value: spock
-            - name: AUTH_DB_URL
-              value: jdbc:postgresql:34.82.33.112
-            - name: AUTH_DB_HOST
+            - name: KC_DB_URL
+              value: jdbc:postgresql://34.82.33.112:5432/postgres
+            - name: KC_DB_HOST
               value: 34.82.33.112
-            - name: AUTH_DB_NAME
+            - name: KC_DB_NAME
               value: postgres
-            - name: AUTH_DB_USER
+            - name: KC_DB_USERNAME
               value: postgres
-            - name: AUTH_DB_PASSWORD
+            - name: KC_DB_PASSWORD
               value: spock
+            - name: KC_HOSTMANE
+              value: 0.0.0.0
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HTTP_ENABLED
+              value: "true"
 
 ---
 apiVersion: v1
@@ -57,7 +71,12 @@ spec:
     app: keycloak
   ports:
     - protocol: "TCP"
-      port: 8443    # Port the service is running on in the cluster.
+      name: "http"
+      port: 80    # Port the service is running on in the cluster.
+      targetPort: 8080  # Port exposed by the service
+    - protocol: "TCP"
+      name: "https"
+      port: 443    # Port the service is running on in the cluster.
       targetPort: 8443  # Port exposed by the service
-#  type: NodePort
+  type: LoadBalancer
 

@@ -6,7 +6,7 @@ apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
   name: kc-route
-  namespace: keycloak
+  namespace: djmz
 spec:
   hostnames:
   - key.lxci.net
@@ -19,9 +19,9 @@ spec:
   - backendRefs:
     - group: ""
       kind: Service
-      name: keycloak
-      namespace: keycloak
-      port: 443
+      name: keycloak-svc
+      namespace: djmz
+      port: 8443
       weight: 1
     matches:
     - path:

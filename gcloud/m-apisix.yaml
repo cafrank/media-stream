@@ -1,0 +1,53 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: m-api6-route
+  namespace: djmz
+spec:
+  http:
+  - name: health-check
+    match:
+      hosts:
+        - gw.lxci.net
+      paths:
+        - "/*"
+    backends:
+      - serviceName: media-svc
+        servicePort: 8080
+  - name: keycloak
+    match:
+      hosts:
+        - gw.lxci.net
+      paths:
+        - "/admin/*"
+        - "/realms/*"
+    backends:
+      - serviceName: keycloak-svc
+        servicePort: 80
+  - name: media-api
+    match:
+      hosts:
+        - www.key.lxci.net
+        - api.lxci.net
+        - api.djmz.com
+      paths:
+        - "/"
+        - "/api/media/*"
+    backends:
+      - serviceName: media-svc
+        servicePort: 8080
+    plugins:    # https://www.youtube.com/watch?v=xjDQ9Gm234c&t=48s    TS: 20:20
+    - name: openid-connect  # https://apisix.apache.org/blog/2022/07/06/use-keycloak-with-api-gateway-to-secure-apis/
+      enable: true
+      config:
+        client_id: product-app
+        client_secret: KaRQn5fPuZv4XA5GrYWQxj4SgUfgBNtV   # Mandatory! Does not work with open clients.
+        scope: "openid profile"
+        discovery: https://key.lxci.net/realms/Services/.well-known/openid-configuration
+        realm: Services
+        #redirect_uri: "https://www.key.lxci.net/api/media/callback"
+        redirect_uri: "https://www.key.lxci.net/api/media/RIH"
+        #redirect_uri: "https://live.virtualdj.com/live/oauth.php"
+        bearer_only: true
+        access_token_in_authorization_header: true
+        ssl_verify: false

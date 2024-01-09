@@ -21,9 +21,10 @@ spec:
         kind: Secret
         name: lxci-net-tls
       mode: Terminate
+      #mode: Passthrough
     allowedRoutes:
-      kinds:
-      - group: gateway.networking.k8s.io
-        kind: HTTPRoute
+#      kinds:
+#      - group: gateway.networking.k8s.io
+#        kind: HTTPRoute
       namespaces:
         from: All

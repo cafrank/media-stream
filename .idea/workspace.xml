@@ -6,14 +6,19 @@
   <component name="ChangeListManager">
     <list default="true" id="6bcc3f69-bcd5-4f95-bef9-e6facf2f64a6" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README" beforeDir="false" afterPath="$PROJECT_DIR$/README" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gcloud/README" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/README" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gcloud/gw.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/gw.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gcloud/httpbin-apisix.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/m-apisix.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gcloud/kc-route.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/kc-route.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gcloud/m-route.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/gcloud/m-route.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/keycloak-provider/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/keycloak-provider/README" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/README" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/media-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/media-service/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/build.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/media-service/k8s-media.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/k8s-media.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/media-service/src/main/java/com/sparkle/mediaservice/controller/AccountController.java" beforeDir="false" afterPath="$PROJECT_DIR$/media-service/src/main/java/com/sparkle/mediaservice/controller/RootController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/build.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/helm/keycloak.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/helm/keycloak.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/helm/setup.sh" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/helm/setup.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/k8s-keycloak.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/k8s-keycloak.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/ApiUserStorageProvider.java" beforeDir="false" afterPath="$PROJECT_DIR$/keycloak-provider/src/main/java/org/sparkle/auth/kc/provider/ApiUserStorageProvider.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -10,6 +10,7 @@ metadata:
 spec:
   hostnames:
   - gw.lxci.net
+  - api.djmz.com
   parentRefs:
   - group: gateway.networking.k8s.io
     kind: Gateway
