@@ -165,7 +165,6 @@ HRESULT VDJ_API TestProvider::OnLogout()
 
 HRESULT VDJ_API TestProvider::OnOAuth(const char *access_token, size_t access_token_expire, const char* refresh_token, const char* code, const char* errorMessage)
 {
-    string XtokenUrl = kcBaseUrl +  "realms/"+ kcRealm +"/protocol/openid-connect/token?client_id="+ kcClient +"&client_secret="+ kcSecret +"&scope=openid&grant_type=password&username=grhex&password=foo";
     myLog.writeSuccess((char*)"TestProvider::OnOAuth(Access: %s, Expire: %d, Refresh: %s, Code: %s, Error: %s)",
                        access_token, access_token_expire, refresh_token, code, errorMessage);
     if (code)
