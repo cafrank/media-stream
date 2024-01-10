@@ -132,7 +132,8 @@ HRESULT VDJ_API DjmzLink::IsLogged()
     if (isLoggedIn) {
         myLog.writeSuccess((char*)"tokenExpire: %ld, Delta: %ld)", accessTokenExpire, accessTokenExpire -time(0));
         if (accessTokenExpire - 100 < time(0)) {            // Time to refresh
-            oauth->refreshToken(refreshToken.c_str(), kcTokenUrl.c_str(), "client_id=product-app");
+            string client = "client_id=" + kcClient + "&client_secret=" + kcSecret;
+            oauth->refreshToken(refreshToken.c_str(), kcTokenUrl.c_str(), client.c_str());
         }
         isLoggedIn = accessTokenExpire >= time(0);
     }
@@ -148,7 +149,7 @@ HRESULT VDJ_API DjmzLink::OnLogin()
 #if 1
     curl_global_init(CURL_GLOBAL_ALL);
 #endif
-    string url = kcBaseUrl + "/realms/Services/protocol/openid-connect/auth?client_id=product-app&client_secret=5c1H4o1jZ9Q0iPST0CBsBQ1mhJVwaRPK&scope=openid&grant_type=urn:openid:params:grant-type:ciba&username=grhex&password=foo";
+    string url = kcBaseUrl + "/realms/" + kcRealm + "/protocol/openid-connect/auth?client_id=" + kcClient + "&client_secret=" + kcSecret + "scope=openid&grant_type=urn:openid:params:grant-type:ciba&username=grhex&password=foo";
     myLog.writeError((char*) "TestProvider::OnLogin: %s", url.c_str());
     oauth->open(url.c_str());
     // Internet::openBrowser(url);
@@ -168,14 +169,14 @@ HRESULT VDJ_API DjmzLink::OnLogout()
 
 HRESULT VDJ_API DjmzLink::OnOAuth(const char *access_token, size_t access_token_expire, const char* refresh_token, const char* code, const char* errorMessage)
 {
-    string XtokenUrl = kcBaseUrl +  "realms/Services/protocol/openid-connect/token?client_id=product-app&client_secret=5c1H4o1jZ9Q0iPST0CBsBQ1mhJVwaRPK&scope=openid&grant_type=password&username=grhex&password=foo";
     myLog.writeSuccess((char*)"TestProvider::OnOAuth(Access: %s, Expire: %d, Refresh: %s, Code: %s, Error: %s)",
                        access_token, access_token_expire, refresh_token, code, errorMessage);
     if (code)
     {
         myLog.writeSuccess((char*)"oauth->getToken(%s, %s)", code, kcTokenUrl.c_str());
         // getToken will POST code=, grant_type= and redirect_uri=. anything else should be added in tokenPost.
-        oauth->getToken(code, kcTokenUrl.c_str(), "client_id=product-app");
+        string client = "client_id=" + kcClient + "&client_secret=" + kcSecret;
+        oauth->getToken(code, kcTokenUrl.c_str(), client.c_str());
     } else {
         if (access_token) {
             accessToken = access_token;
