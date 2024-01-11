@@ -15,8 +15,8 @@
 mvn clean package -DskipTests=true   && \
 docker build --no-cache -t productservice .  && \
 docker tag productservice jsnack58/productservice && \
-docker push jsnack58/productservice && \
-kubectl -n djmz delete -f k8s-productservice.yaml && \
-kubectl -n djmz apply  -f k8s-productservice.yaml && \
-kubectl -n djmz get pod
+docker push jsnack58/productservice
+#kubectl -n djmz delete -f k8s-productservice.yaml && \
+#kubectl -n djmz apply  -f k8s-productservice.yaml && \
+#kubectl -n djmz get pod
 
