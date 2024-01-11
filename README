@@ -93,7 +93,6 @@ do
 done
 
 for i in
-
      ARTIST_ID AUDIO_OLDSCHOOL CRATE DJMZ_AUDIO DJTOOLS FREE;
 for i in VIDEO ;
 do
