@@ -1,7 +1,0 @@
-/home/anthony/IdeaProjects/media-stream/product-service/src/main/java/com/example/productservice/dto/ProductResponse.java
-/home/anthony/IdeaProjects/media-stream/product-service/src/main/java/com/example/productservice/repository/ProductRepository.java
-/home/anthony/IdeaProjects/media-stream/product-service/src/main/java/com/example/productservice/model/Product.java
-/home/anthony/IdeaProjects/media-stream/product-service/src/main/java/com/example/productservice/dto/ProductRequest.java
-/home/anthony/IdeaProjects/media-stream/product-service/src/main/java/com/example/productservice/service/ProductService.java
-/home/anthony/IdeaProjects/media-stream/product-service/src/main/java/com/example/productservice/controller/ProductController.java
-/home/anthony/IdeaProjects/media-stream/product-service/src/main/java/com/example/productservice/MicroservicesApplication.java
