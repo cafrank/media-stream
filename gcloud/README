@@ -1,4 +1,4 @@
-# https://www.youtube.com/watch?v=-fbH5Qs3QXU
+ # https://www.youtube.com/watch?v=-fbH5Qs3QXU
 
 ===========================
 Configure kubectl for GKE
@@ -172,3 +172,8 @@ curl -X PUT borg:9180/apisix/admin/ssls/1 -H 'X-API-KEY: edd1c9f034335f136f87ad8
 }'
 
 
+---------------------------------------------
+Save some money while not in use:
+---------------------------------------------
+gcloud auth login
+gcloud container clusters resize gke-dj-pool --zone us-central1-a --node-pool default-pool --num-nodes 1

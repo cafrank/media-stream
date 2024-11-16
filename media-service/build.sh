@@ -14,8 +14,8 @@
 #==================================================
 mvn clean package -DskipTests=true   && \
 docker build --no-cache -t media .  && \
-docker tag media cafrank/media && \
-docker push cafrank/media && \
+docker tag media cafrank/media3 && \
+docker push cafrank/media3 && \
 kubectl -n djmz delete -f k8s-media.yaml && \
 kubectl -n djmz apply  -f k8s-media.yaml && \
 kubectl -n djmz get pod

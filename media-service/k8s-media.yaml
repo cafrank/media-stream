@@ -17,15 +17,15 @@ spec:
       containers:
         - name: media
           #image: localhost:32000/media   # My docker container image
-          image: cafrank/media:latest   # My docker container image
+          image: cafrank/media3:latest   # My docker container image
           imagePullPolicy: Always
           ports:
             - containerPort: 8080   # the port that the container is running on in the cluster
-        - name: mongo
-          image: mongo:latest    # MongoDB docker container image
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 27018   # the port that the container is running on in the cluster
+#        - name: mongo
+#          image: mongo:latest    # MongoDB docker container image
+#          imagePullPolicy: IfNotPresent
+#          ports:
+#            - containerPort: 27018   # the port that the container is running on in the cluster
 
 ---
 apiVersion: v1
