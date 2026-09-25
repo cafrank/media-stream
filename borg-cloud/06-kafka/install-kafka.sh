@@ -45,4 +45,4 @@ kk rollout status statefulset kafka --timeout=900s
 WAIT_NAMESPACE=$KAFKA_NAMESPACE wait_for "3 Kafka brokers Ready" kafka_pods_ready
 WAIT_NAMESPACE=$KAFKA_NAMESPACE wait_for "controller quorum (leader + 3 voters)" kafka_quorum_ok
 echo ">>> Kafka ready: kafka-bootstrap.$KAFKA_NAMESPACE.svc.cluster.local:9092 (in-cluster),"
-echo "    $NODE1_IP:$KAFKA_EXTERNAL_PORT (host; any node IP). Test it: make kafka-test"
+echo "    $KAFKA_DOMAIN:443 via $VIP_ADDRESS (host, TLS: make kafka-ca, make kafka-hosts). Test it: make kafka-test"
