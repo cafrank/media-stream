@@ -233,3 +233,11 @@ cluster-status:
 .PHONY: db-test
 db-test:
 	bash 03-databases/db-test.sh
+
+.PHONY: db-status
+db-status:
+	@bash 03-databases/db-status.sh
+
+.PHONY: db-info
+db-info:
+	@bash 03-databases/db-info.sh
