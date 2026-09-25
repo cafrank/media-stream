@@ -1,0 +1,86 @@
+# =============================================================================
+# record-pool chart defaults. Environment overrides live in values-*.yaml.
+# =============================================================================
+
+replicaCount: 1
+
+image:
+  repository: docker.io/cafrank/record-pool
+  # Defaults to .Chart.AppVersion. build.sh deploys with the git sha.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Port nginx listens on (record-pool/nginx.conf).
+containerPort: 8080
+
+service:
+  type: ClusterIP
+  port: 80
+  # Only used when type is NodePort.
+  nodePort: null
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+# nginx-unprivileged runs as uid 101. The root filesystem is read-only; /tmp
+# (pid file, temp paths) is an emptyDir.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 16Mi
+  limits:
+    memory: 64Mi
+
+# GET /healthz returns "ok" (nginx.conf).
+probes:
+  path: /healthz
+  readiness:
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    periodSeconds: 20
+    failureThreshold: 3
+
+# On shutdown, keep serving this long before nginx gets SIGTERM, so the ingress
+# stops routing to the pod first. Uses the Kubernetes preStop sleep action
+# (1.30+). 0 disables it.
+preStopSleepSeconds: 5
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+# Spread replicas across nodes: "soft" (preferred), "hard" (required) or ""
+# (off). Ignored when affinity is set.
+podAntiAffinity: ""
+
+# networking.k8s.io/v1 Ingress. The app calls the API on its own origin
+# (/api/...), so route those paths to media-service on the same host.
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: record-pool.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: record-pool-tls
+  #    hosts: [record-pool.local]

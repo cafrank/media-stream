@@ -1,0 +1,10 @@
+apiVersion: v2
+name: record-pool
+description: RecordPool web app (Expo static export served by nginx)
+type: application
+version: 0.1.0
+# Default image tag. build.sh pushes this tag alongside the git-sha tag.
+appVersion: "1.0.0"
+home: https://github.com/cafrank/media-stream
+sources:
+  - https://github.com/cafrank/media-stream/tree/main/record-pool

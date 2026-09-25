@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "record-pool.fullname" . }}-test-connection"
+  labels:
+    {{- include "record-pool.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.10.1
+      # The app shell, and a route served from its exported page
+      command: ["sh", "-c"]
+      args:
+        - >-
+          curl -fsS http://{{ include "record-pool.fullname" . }}:{{ .Values.service.port }}/ | grep -q '<div id="root">' &&
+          curl -fsS -o /dev/null http://{{ include "record-pool.fullname" . }}:{{ .Values.service.port }}/RecordPoolApp
