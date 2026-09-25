@@ -44,11 +44,12 @@ help:
 	@echo "================================================================"
 	@echo ""
 	@echo "  First-time setup:"
-	@echo "  make up                  Everything: vagrant-up + cluster + databases + registry"
+	@echo "  make up                  Everything: vagrant-up + cluster + databases + registry + kafka"
 	@echo "  make vagrant-up          1. Create + provision all 3 VMs"
 	@echo "  make cluster             2. Base OS prep + k3s HA install + kubeconfig"
 	@echo "  make provision-databases 3. Postgres + MongoDB + Redis (3 members each)"
 	@echo "  make provision-registry  4. In-cluster image registry + node mirrors"
+	@echo "  make provision-kafka     5. Kafka, 3 brokers (KRaft)"
 	@echo ""
 	@echo "  Vagrant lifecycle:"
 	@echo "  make vagrant-up          Create/start VMs + run provisioner"
@@ -85,6 +86,15 @@ help:
 	@echo "  make media-status        Pods, ingress, image, URL"
 	@echo "  make media-test          HTTP checks through Traefik on every node"
 	@echo ""
+	@echo "  Kafka (namespace $(KAFKA_NAMESPACE); step 06-kafka):"
+	@echo "  make provision-kafka     3 brokers, one per node (KRaft, plaintext)"
+	@echo "  make kafka-status        Pods, controller quorum, topics"
+	@echo "  make kafka-test          Produce/consume in-cluster and from the host"
+	@echo "  make kafka-failover-test One broker down; all brokers restarted (disruptive)"
+	@echo "  make kafka-uninstall     Delete Kafka and its data"
+	@echo "    in-cluster: kafka-bootstrap.$(KAFKA_NAMESPACE).svc.cluster.local:9092"
+	@echo "    host:       $(NODE1_IP):9094 (any node IP)"
+	@echo ""
 	@echo "  Convenience:"
 	@echo "  make ssh-node1/2/3       SSH into a node with the cluster key"
 	@echo "  make kubeconfig          Re-fetch kubeconfig → $(KUBECONFIG_OUT)"
@@ -99,7 +109,7 @@ help:
 	@echo ""
 
 .PHONY: up
-up: vagrant-up cluster provision-databases provision-registry
+up: vagrant-up cluster provision-databases provision-registry provision-kafka
 
 # ============================================================
 # Vagrant VM lifecycle
@@ -229,6 +239,12 @@ kafka-status:
 		--bootstrap-server localhost:9092 describe --status | grep -E '^(LeaderId|CurrentVoters|HighWatermark)'
 	@$(KUBECTL) -n $(KAFKA_NAMESPACE) exec kafka-0 -c kafka -- /opt/kafka/bin/kafka-topics.sh \
 		--bootstrap-server localhost:9092 --list
+
+.PHONY: kafka-uninstall
+kafka-uninstall:
+	@echo "WARNING: This deletes Kafka and all its data (namespace $(KAFKA_NAMESPACE)). Ctrl-C to abort."
+	@sleep 3
+	$(KUBECTL) delete namespace $(KAFKA_NAMESPACE) --ignore-not-found --wait=true
 
 # TAG=<tag> SKIP_BUILD=1 redeploys an image already in the registry
 .PHONY: deploy-media
