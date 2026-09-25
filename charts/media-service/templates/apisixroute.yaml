@@ -1,0 +1,24 @@
+{{- if .Values.apisixRoute.enabled }}
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: {{ include "media-service.fullname" . }}
+  labels:
+    {{- include "media-service.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.apisixRoute.ingressClassName }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  http:
+    - name: media
+      match:
+        {{- with .Values.apisixRoute.hosts }}
+        hosts:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        paths:
+          {{- toYaml .Values.apisixRoute.paths | nindent 10 }}
+      backends:
+        - serviceName: {{ include "media-service.serviceName" . }}
+          servicePort: {{ .Values.service.port }}
+{{- end }}

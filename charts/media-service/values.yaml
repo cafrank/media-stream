@@ -1,0 +1,152 @@
+# =============================================================================
+# media-service chart defaults. Environment overrides live in values-*.yaml.
+# =============================================================================
+
+replicaCount: 1
+
+image:
+  repository: docker.io/cafrank/media3
+  # Defaults to .Chart.AppVersion. build.sh deploys with the git sha.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Port the Spring Boot app listens on. Exported as SERVER_PORT so it always
+# matches the Service, regardless of application.properties.
+containerPort: 8080
+
+service:
+  # Service name. Empty = chart fullname.
+  name: ""
+  type: ClusterIP
+  port: 8080
+  # Only used when type is NodePort.
+  nodePort: null
+  annotations: {}
+
+# Non-secret Spring settings, rendered into a ConfigMap and loaded with envFrom.
+# Keys are environment variables (Spring relaxed binding).
+config:
+  SPRING_PROFILES_ACTIVE: kubernetes
+  # No Eureka server is deployed alongside the service.
+  EUREKA_CLIENT_ENABLED: "false"
+  # Sleuth/Zipkin reporter from the parent pom; no Zipkin collector by default.
+  SPRING_ZIPKIN_ENABLED: "false"
+
+# Additional container env entries (full EnvVar objects, e.g. valueFrom).
+extraEnv: []
+
+# MongoDB connection used by spring-boot-starter-data-mongodb. Exposed to the
+# app as SPRING_DATA_MONGODB_URI from a Secret.
+#   mongodb.enabled=true  -> the chart runs MongoDB and builds the URI itself
+#   mongodb.enabled=false -> set externalMongodb.uri or externalMongodb.existingSecret
+mongodb:
+  enabled: true
+  image:
+    repository: docker.io/library/mongo
+    tag: "7.0"
+    pullPolicy: IfNotPresent
+  database: media-service
+  auth:
+    enabled: false
+    rootUser: root
+    # Required when auth.enabled. The chart embeds it in the app's connection
+    # URI, so it must be known at render time; to keep credentials out of
+    # values, run MongoDB separately and use externalMongodb.existingSecret.
+    rootPassword: ""
+  persistence:
+    enabled: true
+    # Empty = cluster default StorageClass (local-path on k3s).
+    storageClass: ""
+    size: 8Gi
+  resources: {}
+
+externalMongodb:
+  uri: ""
+  # Existing Secret holding the full URI, instead of uri.
+  existingSecret: ""
+  existingSecretKey: SPRING_DATA_MONGODB_URI
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# spring-cloud-starter-kubernetes-client reads ConfigMaps and discovers
+# services/endpoints/pods via the API server; grant it read-only access in the
+# release namespace.
+rbac:
+  create: true
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 384Mi
+  limits:
+    memory: 768Mi
+
+# GET / returns "OK" (RootController).
+probes:
+  path: /
+  startup:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 36
+  readiness:
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    periodSeconds: 20
+    failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# -----------------------------------------------------------------------------
+# External exposure. Enable at most the ones your cluster supports.
+# -----------------------------------------------------------------------------
+
+# networking.k8s.io/v1 Ingress (Traefik on k3s, nginx, apisix, GKE, ...)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: media.local
+      paths:
+        - path: /api/media
+          pathType: Prefix
+  tls: []
+  #  - secretName: media-tls
+  #    hosts: [media.local]
+
+# Gateway API HTTPRoute. The Gateway itself is cluster infrastructure and is
+# referenced, not created.
+httpRoute:
+  enabled: false
+  parentRefs: []
+  #  - name: media-gateway
+  #    namespace: gateway-system
+  hostnames: []
+  matches:
+    - path:
+        type: PathPrefix
+        value: /api/media
+
+# APISIX ingress controller ApisixRoute (apisix.apache.org/v2 CRD must exist).
+apisixRoute:
+  enabled: false
+  ingressClassName: ""
+  hosts: []
+  paths:
+    - /api/media/*

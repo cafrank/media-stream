@@ -1,22 +1,35 @@
-# docker build --build-arg JAR_FILE=target/\*.jar -t media .  && \
-#mvn clean package -DskipTests=true   && \
-#docker build -t media .  && \
-#docker tag media localhost:32000/media   && \
-#docker push localhost:32000/media   && \
-#microk8s ctr image pull --plain-http localhost:32000/media:latest && \
-#kubectl -n djmz delete -f k8s-media.yaml && \
-#kubectl -n djmz apply -f k8s-media.yaml  && \
-#kubectl -n djmz get pod | grep -v spin
+#!/bin/bash
+# =============================================================================
+# Build, push and deploy media-service with the Helm chart.
+#
+#   ./build.sh                      # build + push + deploy to namespace djmz
+#   NAMESPACE=media VALUES=../charts/media-service/values-borg.yaml ./build.sh
+#   SKIP_BUILD=1 TAG=abc1234 ./build.sh   # redeploy an existing tag
+#
+# Prereq: docker login --username=cafrank   (hub.docker.com)
+# =============================================================================
+set -euo pipefail
+cd "$(dirname "$0")"
 
+IMAGE=${IMAGE:-docker.io/cafrank/media3}
+TAG=${TAG:-$(git rev-parse --short HEAD)$(git diff --quiet HEAD -- . || echo "-dirty")}
+NAMESPACE=${NAMESPACE:-djmz}
+RELEASE=${RELEASE:-media-service}
+CHART=../charts/media-service
+VALUES=${VALUES:-$CHART/values-djmz.yaml}
+APP_VERSION=$(sed -n 's/^appVersion: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/p' "$CHART/Chart.yaml")
 
-#==================================================
-# hub.docker.com: docker login --username=cafrank
-#==================================================
-mvn clean package -DskipTests=true   && \
-docker build --no-cache -t media .  && \
-docker tag media cafrank/media3 && \
-docker push cafrank/media3 && \
-kubectl -n djmz delete -f k8s-media.yaml && \
-kubectl -n djmz apply  -f k8s-media.yaml && \
-kubectl -n djmz get pod
+if [ -z "${SKIP_BUILD:-}" ]; then
+    mvn clean package -DskipTests=true
+    docker build --no-cache -t "$IMAGE:$TAG" -t "$IMAGE:$APP_VERSION" .
+    docker push "$IMAGE:$TAG"
+    docker push "$IMAGE:$APP_VERSION"
+fi
 
+helm upgrade --install "$RELEASE" "$CHART" \
+    --namespace "$NAMESPACE" --create-namespace \
+    -f "$VALUES" \
+    --set image.tag="$TAG" \
+    --wait --timeout 5m
+
+kubectl -n "$NAMESPACE" get pods -l app.kubernetes.io/instance="$RELEASE"
