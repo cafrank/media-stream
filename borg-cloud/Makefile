@@ -25,6 +25,7 @@ REGISTRY_NAMESPACE := $(call var,REGISTRY_NAMESPACE)
 MEDIA_NAMESPACE := $(call var,MEDIA_NAMESPACE)
 KAFKA_NAMESPACE := $(call var,KAFKA_NAMESPACE)
 VIP_ADDRESS := $(call var,VIP_ADDRESS)
+KAFKA_DOMAIN := $(call var,KAFKA_DOMAIN)
 
 VM_MEMORY ?= $(call var,VM_MEMORY)
 VM_CPUS   ?= $(call var,VM_CPUS)
@@ -252,6 +253,19 @@ kafka-status:
 		--bootstrap-server localhost:9092 describe --status | grep -E '^(LeaderId|CurrentVoters|HighWatermark)'
 	@$(KUBECTL) -n $(KAFKA_NAMESPACE) exec kafka-0 -c kafka -- /opt/kafka/bin/kafka-topics.sh \
 		--bootstrap-server localhost:9092 --list
+
+.PHONY: kafka-ca
+kafka-ca:
+	@source ./vars.sh && source 03-databases/lib.sh && source 06-kafka/kafka-lib.sh && \
+		kafka_ca_pem > .kafka-ca.crt 2>/dev/null; \
+		[ -s .kafka-ca.crt ] || { rm -f .kafka-ca.crt; echo "No Kafka CA found (run: make provision-kafka)" >&2; exit 1; }
+	@echo "Wrote $(CURDIR)/.kafka-ca.crt (BorgCloud Kafka CA certificate; trust it in Kafka clients)"
+
+.PHONY: kafka-hosts
+kafka-hosts:
+	@echo "# BorgCloud Kafka via HAProxy on the VIP: add these lines to /etc/hosts"
+	@for n in $(KAFKA_DOMAIN) kafka-0.$(KAFKA_DOMAIN) kafka-1.$(KAFKA_DOMAIN) kafka-2.$(KAFKA_DOMAIN); do \
+		echo "$(VIP_ADDRESS) $$n"; done
 
 .PHONY: kafka-uninstall
 kafka-uninstall:

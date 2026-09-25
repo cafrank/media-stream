@@ -10,6 +10,7 @@ cd "$(dirname "$0")/.."
 source ./vars.sh
 source 03-databases/lib.sh
 source 06-kafka/kafka-lib.sh
+source 06-kafka/kafka-tls.sh
 
 preflight
 
@@ -22,6 +23,11 @@ else
     kk create secret generic kafka-cluster-id --from-literal=id="$id" >/dev/null
     echo "    secret/kafka-cluster-id created"
 fi
+
+tls_work=$(mktemp -d)
+trap 'rm -rf "$tls_work"' EXIT
+echo ">>> Kafka TLS (CA + broker certificate for $(kafka_names))"
+ensure_kafka_tls "$tls_work"
 
 echo ">>> Kafka: StatefulSet kafka (3 brokers, $KAFKA_IMAGE)"
 KAFKA_SCRIPTS_SHA=$(kafka_scripts_sha 06-kafka/kafka.yaml)

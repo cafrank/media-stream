@@ -5,12 +5,12 @@
 # =============================================================================
 
 export KAFKA_NAMESPACE KAFKA_IMAGE KAFKA_STORAGE_SIZE KAFKA_HEAP KAFKA_MEMORY_REQUEST \
-       KAFKA_MEMORY_LIMIT KAFKA_EXTERNAL_PORT KAFKA_SCRIPTS_SHA
+       KAFKA_MEMORY_LIMIT KAFKA_EXTERNAL_PORT KAFKA_SCRIPTS_SHA KAFKA_DOMAIN KAFKA_TLS_SHA
 
 # Only these variables are substituted into kafka.yaml; start.sh's own shell
 # variables ($NS, $N, $HOST_IP, ...) are left alone.
 # shellcheck disable=SC2016
-KAFKA_VARS='${KAFKA_NAMESPACE} ${KAFKA_IMAGE} ${KAFKA_STORAGE_SIZE} ${KAFKA_HEAP} ${KAFKA_MEMORY_REQUEST} ${KAFKA_MEMORY_LIMIT} ${KAFKA_EXTERNAL_PORT} ${KAFKA_SCRIPTS_SHA}'
+KAFKA_VARS='${KAFKA_NAMESPACE} ${KAFKA_IMAGE} ${KAFKA_STORAGE_SIZE} ${KAFKA_HEAP} ${KAFKA_MEMORY_REQUEST} ${KAFKA_MEMORY_LIMIT} ${KAFKA_EXTERNAL_PORT} ${KAFKA_SCRIPTS_SHA} ${KAFKA_DOMAIN} ${KAFKA_TLS_SHA}'
 
 kk() { kubectl -n "$KAFKA_NAMESPACE" "$@"; }
 
@@ -52,4 +52,17 @@ topic_isr_full() {
                  for (i = 1; i <= NF; i++) if ($i == "Isr:" && split($(i + 1), a, ",") != 3) bad = 1
              }
              END { exit !(n > 0 && !bad) }'
+}
+
+# kafka_names: the 4 host-facing names (bootstrap first), space-separated
+kafka_names() { echo "$KAFKA_DOMAIN kafka-0.$KAFKA_DOMAIN kafka-1.$KAFKA_DOMAIN kafka-2.$KAFKA_DOMAIN"; }
+
+# kafka_ca_pem: the BorgCloud Kafka CA certificate (public) from Secret kafka-ca
+kafka_ca_pem() { kk get secret kafka-ca -o jsonpath='{.data.ca\.crt}' | base64 -d; }
+
+# cert_sans <pem-file>: the certificate's DNS subjectAltNames, sorted, one per line
+cert_sans() {
+    local ext
+    ext=$(openssl x509 -in "$1" -noout -ext subjectAltName 2>/dev/null) || return 0
+    tr ',' '\n' <<<"$ext" | sed -n 's/^ *DNS://p' | sort
 }
