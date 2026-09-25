@@ -1,0 +1,7 @@
+# /etc/rancher/k3s/registries.yaml (written by install-registry.sh, one per node).
+# Images named localhost:${REGISTRY_LOCAL_PORT}/... are pulled from the in-cluster
+# registry through this node's NodePort.
+mirrors:
+  "localhost:${REGISTRY_LOCAL_PORT}":
+    endpoint:
+      - "http://${NODE_IP}:${REGISTRY_NODEPORT}"
