@@ -24,7 +24,7 @@ test_k3s() {
         if k3s_config_current "${!ip_var}"; then ok "${!name_var}: config.yaml loaded"
         else bad "${!name_var}: config.yaml missing, different, or not loaded"; fi
     done
-    if traefik_gone; then ok "no Traefik or svclb pods, no Traefik HelmCharts"
+    if traefik_gone; then ok "no Traefik or svclb pods, no Traefik HelmCharts or Service"
     else bad "Traefik or svclb still present"; fi
     for ip in $ALL_IPS; do
         code=$(http_code "http://$ip/")

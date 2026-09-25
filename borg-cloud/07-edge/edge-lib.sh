@@ -26,13 +26,16 @@ k3s_config_current() {
     awk '{exit !($1 <= $2)}' <<<"$times"
 }
 
-# traefik_gone: no Traefik or svclb pods, no bundled Traefik HelmCharts
+# traefik_gone: no Traefik or svclb pods, no bundled Traefik HelmCharts, and no
+# traefik Service (a LoadBalancer Service left Terminating is still tracked by
+# kube-vip and keeps kube-proxy REJECT rules on the node IPs)
 traefik_gone() {
     local pods charts
     pods=$(kubectl -n kube-system get pods --no-headers -o custom-columns=N:.metadata.name 2>/dev/null) || return 1
     charts=$(kubectl -n kube-system get helmcharts.helm.cattle.io --no-headers \
         -o custom-columns=N:.metadata.name 2>/dev/null || true)
-    ! grep -qE '^(traefik|svclb-)' <<<"$pods" && ! grep -qxE 'traefik|traefik-crd' <<<"$charts"
+    ! grep -qE '^(traefik|svclb-)' <<<"$pods" && ! grep -qxE 'traefik|traefik-crd' <<<"$charts" &&
+    ! kubectl -n kube-system get service traefik >/dev/null 2>&1
 }
 
 # vip_holders [exclude-ip]: names of nodes with the VIP on CLUSTER_IFACE

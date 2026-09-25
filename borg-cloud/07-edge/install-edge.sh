@@ -34,6 +34,14 @@ disable_traefik() {
         echo "    removing bundled Traefik HelmCharts"
         kubectl -n kube-system delete helmcharts.helm.cattle.io traefik traefik-crd --ignore-not-found
     fi
+    # Traefik's LoadBalancer Service keeps a finalizer that only servicelb clears, and
+    # servicelb is now disabled: without this it stays Terminating forever, and kube-vip
+    # keeps tracking the node IPs it lists as load-balancer addresses
+    if kubectl -n kube-system get service traefik >/dev/null 2>&1; then
+        echo "    removing leftover traefik Service (clearing the servicelb finalizer)"
+        kubectl -n kube-system patch service traefik --type=merge -p '{"metadata":{"finalizers":null}}' >/dev/null
+        kubectl -n kube-system delete service traefik --ignore-not-found --wait=false >/dev/null
+    fi
     WAIT_NAMESPACE=kube-system wait_for "Traefik and svclb pods gone" traefik_gone
 }
 
