@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'; // Cha
 import { NavigationContainer } from '@react-navigation/native';
 // import { ScrollArea } from "@/components/ui/scroll-area" // Removed problematic import
 import { AlertTriangle, X } from 'lucide-react'; // Added for error and alert icons
+import { API_URL } from '@/constants/Api';
 
 // --- Types ---
 interface Track {
@@ -38,7 +39,7 @@ const TrackListScreen = () => {
         const fetchTracks = async () => {
             setLoading(true); // Set loading to true before fetching
             try {
-                let url = `http://your-backend-api.com/api/search?searchTerm=${searchTerm}`;
+                let url = `${API_URL}/api/search?searchTerm=${searchTerm}`;
                 if (selectedGenre) {
                     url += `&genre=${selectedGenre}`;
                 }
