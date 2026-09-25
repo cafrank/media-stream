@@ -37,6 +37,48 @@ disable_traefik() {
     WAIT_NAMESPACE=kube-system wait_for "Traefik and svclb pods gone" traefik_gone
 }
 
+install_kube_vip() {
+    echo ">>> kube-vip (services mode, ARP on $CLUSTER_IFACE)"
+    helm repo add kube-vip https://kube-vip.github.io/helm-charts --force-update >/dev/null
+    helm repo update kube-vip >/dev/null
+    helm upgrade --install kube-vip kube-vip/kube-vip \
+        --version "$KUBE_VIP_CHART_VERSION" --namespace kube-system \
+        --set-string env.vip_interface="$CLUSTER_IFACE" \
+        --set-string env.vip_arp=true \
+        --set-string env.svc_enable=true \
+        --set-string env.svc_election=true \
+        --set-string env.cp_enable=false \
+        --set-string env.lb_enable=false \
+        --wait --timeout "${DB_WAIT_TIMEOUT}s"
+}
+
+install_haproxy() {
+    local svclb
+    svclb=$(kubectl -n kube-system get pods --no-headers -o custom-columns=N:.metadata.name 2>/dev/null || true)
+    ! grep -q '^svclb-' <<<"$svclb" || die "servicelb pods still running; they would claim ports 80/443"
+    echo ">>> HAProxy ingress (2 replicas) on $VIP_ADDRESS"
+    helm repo add haproxytech https://haproxytech.github.io/helm-charts --force-update >/dev/null
+    helm repo update haproxytech >/dev/null
+    helm upgrade --install haproxy haproxytech/kubernetes-ingress \
+        --version "$HAPROXY_CHART_VERSION" --namespace "$HAPROXY_NAMESPACE" --create-namespace \
+        --set controller.replicaCount=2 \
+        --set controller.ingressClassResource.default=true \
+        --set controller.service.type=LoadBalancer \
+        --set-string "controller.service.annotations.kube-vip\.io/loadbalancerIPs=$VIP_ADDRESS" \
+        --set controller.service.loadBalancerIP="$VIP_ADDRESS" \
+        --set controller.service.enablePorts.quic=false \
+        --set controller.service.enablePorts.stat=false \
+        --set controller.service.enablePorts.admin=false \
+        --set controller.resources.requests.cpu=50m \
+        --set controller.resources.requests.memory="$HAPROXY_MEMORY_REQUEST" \
+        --set controller.resources.limits.memory="$HAPROXY_MEMORY_LIMIT" \
+        --set-json 'controller.affinity={"podAntiAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"podAffinityTerm":{"topologyKey":"kubernetes.io/hostname","labelSelector":{"matchLabels":{"app.kubernetes.io/name":"kubernetes-ingress"}}}}]}}' \
+        --wait --timeout "${DB_WAIT_TIMEOUT}s"
+    WAIT_NAMESPACE=$HAPROXY_NAMESPACE wait_for "HAProxy answering on $VIP_ADDRESS" haproxy_ready
+}
+
 preflight
 disable_traefik
-echo ">>> Edge ready."
+install_kube_vip
+install_haproxy
+echo ">>> Edge ready: http://$VIP_ADDRESS/ (HAProxy; default IngressClass haproxy)"

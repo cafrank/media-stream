@@ -48,3 +48,17 @@ vip_holders() {
 
 # http_code <url>: the HTTP status code, or 000 if nothing answered
 http_code() { curl -s -m 5 -o /dev/null -w '%{http_code}' "$1" || true; }
+
+
+# haproxy_ready: 2 HAProxy replicas available, the Service holds the VIP, and the
+# VIP answers HTTP
+haproxy_ready() {
+    local avail lbip
+    avail=$(kubectl -n "$HAPROXY_NAMESPACE" get deployment haproxy-kubernetes-ingress \
+        -o jsonpath='{.status.availableReplicas}' 2>/dev/null) || return 1
+    [ "$avail" = 2 ] || return 1
+    lbip=$(kubectl -n "$HAPROXY_NAMESPACE" get service haproxy-kubernetes-ingress \
+        -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null) || return 1
+    [ "$lbip" = "$VIP_ADDRESS" ] || return 1
+    [ "$(http_code "http://$VIP_ADDRESS/")" != 000 ]
+}
