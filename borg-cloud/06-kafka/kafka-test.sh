@@ -66,7 +66,6 @@ test_certs() {
     echo ">>> TLS certificates (secrets kafka-ca, kafka-tls)"
     kafka_ca_pem > "$work/ca.crt" 2>/dev/null || true
     kk get secret kafka-tls -o jsonpath='{.data.tls\.crt}' 2>/dev/null | base64 -d > "$work/tls.crt" 2>/dev/null || true
-    kk get secret kafka-tls -o jsonpath='{.data.tls\.key}' 2>/dev/null | base64 -d > "$work/tls.key" 2>/dev/null || true
     if [ -s "$work/ca.crt" ] && [ -s "$work/tls.crt" ] &&
        openssl verify -CAfile "$work/ca.crt" "$work/tls.crt" >/dev/null 2>&1; then
         ok "broker certificate verifies against the BorgCloud Kafka CA"
@@ -78,7 +77,9 @@ test_certs() {
     if [ -n "$have" ] && [ "$have" = "$want" ]; then ok "SANs are exactly: $(tr '\n' ' ' <<<"$have")"
     else bad "SANs '$(tr '\n' ' ' <<<"$have")' (want '$(tr '\n' ' ' <<<"$want")')"; fi
     leaf_pub=$(openssl x509 -in "$work/tls.crt" -noout -pubkey 2>/dev/null || true)
-    key_pub=$(openssl pkey -in "$work/tls.key" -pubout 2>/dev/null || true)
+    # the private key is piped straight from the Secret: it is never written to disk
+    key_pub=$(kk get secret kafka-tls -o jsonpath='{.data.tls\.key}' 2>/dev/null | base64 -d 2>/dev/null |
+        openssl pkey -pubout 2>/dev/null || true)
     if [ -n "$key_pub" ] && [ "$leaf_pub" = "$key_pub" ]; then ok "private key matches the certificate"
     else bad "private key missing or does not match the certificate"; fi
 }
