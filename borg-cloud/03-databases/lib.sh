@@ -5,7 +5,10 @@
 #   source ./vars.sh; source 03-databases/lib.sh
 # =============================================================================
 
-export KUBECONFIG="$KUBECONFIG_OUT"
+# BORG_KUBECONFIG overrides the cluster kubeconfig (edge-failover-test points it at a
+# node that stays up). A plain KUBECONFIG from the caller's shell is deliberately
+# ignored: it may belong to another cluster.
+export KUBECONFIG="${BORG_KUBECONFIG:-$KUBECONFIG_OUT}"
 export DB_NAMESPACE DB_STORAGE_SIZE PG_IMAGE PG_MEMORY MONGODB_VERSION MONGO_MEMORY \
        REDIS_IMAGE REDIS_MEMORY SENTINEL_MEMORY
 

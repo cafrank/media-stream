@@ -28,7 +28,7 @@ alive_ip=$NODE1_IP
 [ "$frozen_ip" = "$NODE1_IP" ] && alive_ip=$NODE2_IP
 tmpkc=$(mktemp)
 sed "s|https://[0-9.]*:6443|https://$alive_ip:6443|" "$KUBECONFIG_OUT" > "$tmpkc"
-export KUBECONFIG=$tmpkc
+export KUBECONFIG=$tmpkc BORG_KUBECONFIG=$tmpkc   # BORG_KUBECONFIG: for the scripts it calls
 
 # resync_clock: a paused VM's clock stops, and chrony only notices at its next
 # poll (minutes). Make it measure now and step the clock, so the node's API
@@ -70,6 +70,7 @@ VBoxManage controlvm "$frozen" resume
 resync_clock
 all_ready() { [ "$(kubectl get nodes --no-headers 2>/dev/null | awk '$2 == "Ready"' | wc -l)" -eq 3 ]; }
 WAIT_NAMESPACE=kube-system wait_for "3 nodes Ready" all_ready
+unset BORG_KUBECONFIG
 export KUBECONFIG=$KUBECONFIG_OUT
 bash 07-edge/edge-test.sh vip | tail -1
 echo ">>> edge-failover-test: passed"
