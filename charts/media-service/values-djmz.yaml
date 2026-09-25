@@ -1,0 +1,28 @@
+# =============================================================================
+# Reproduces the legacy media-service/k8s-*.yaml deployment (namespace djmz):
+#   helm upgrade --install media charts/media-service -n djmz \
+#     -f charts/media-service/values-djmz.yaml --set image.tag=<tag>
+#
+# One-time migration on a cluster that still runs the kubectl-applied
+# manifests: Helm will not adopt resources it did not create, and the legacy
+# ingress already routes api.djmz.com/api/media. Before the first install:
+#   kubectl -n djmz delete deploy/media svc/media-svc
+#   # and remove the /api/media path from ingress/djmz-ingress-http
+# =============================================================================
+
+# Keep the legacy Service name that existing routes point at.
+service:
+  name: media-svc
+  annotations:
+    # GKE container-native load balancing
+    cloud.google.com/neg: '{"ingress":true}'
+
+# Legacy ingress: api.djmz.com/api/media via the apisix IngressClass.
+ingress:
+  enabled: true
+  className: apisix
+  hosts:
+    - host: api.djmz.com
+      paths:
+        - path: /api/media
+          pathType: Prefix

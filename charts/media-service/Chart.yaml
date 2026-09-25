@@ -1,0 +1,10 @@
+apiVersion: v2
+name: media-service
+description: media-stream media-service (Spring Boot) with optional MongoDB
+type: application
+version: 0.1.0
+# Default image tag. build.sh pushes this tag alongside the git-sha tag.
+appVersion: "0.0.1-SNAPSHOT"
+home: https://github.com/cafrank/media-stream
+sources:
+  - https://github.com/cafrank/media-stream/tree/main/media-service

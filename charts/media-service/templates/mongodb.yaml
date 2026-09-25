@@ -1,0 +1,97 @@
+{{- if .Values.mongodb.enabled }}
+{{- $name := include "media-service.mongodb.fullname" . }}
+{{- if .Values.mongodb.auth.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "media-service.mongodb.authSecretName" . }}
+  labels:
+    {{- include "media-service.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  MONGO_INITDB_ROOT_USERNAME: {{ .Values.mongodb.auth.rootUser | quote }}
+  MONGO_INITDB_ROOT_PASSWORD: {{ .Values.mongodb.auth.rootPassword | quote }}
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "media-service.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  # Resolve the pod's DNS name before it is Ready so the app's driver
+  # connects as soon as mongod is listening.
+  publishNotReadyAddresses: true
+  selector:
+    {{- include "media-service.mongodb.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: mongodb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "media-service.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ $name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "media-service.mongodb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "media-service.mongodb.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mongodb
+          image: "{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}"
+          imagePullPolicy: {{ .Values.mongodb.image.pullPolicy }}
+          ports:
+            - name: mongodb
+              containerPort: 27017
+          {{- if .Values.mongodb.auth.enabled }}
+          envFrom:
+            - secretRef:
+                name: {{ include "media-service.mongodb.authSecretName" . }}
+          {{- end }}
+          readinessProbe:
+            tcpSocket:
+              port: mongodb
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mongodb
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          {{- with .Values.mongodb.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      {{- if not .Values.mongodb.persistence.enabled }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if .Values.mongodb.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.mongodb.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.persistence.size }}
+  {{- end }}
+{{- end }}

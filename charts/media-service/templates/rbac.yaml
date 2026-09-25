@@ -1,0 +1,28 @@
+{{- if .Values.rbac.create }}
+# Read-only access for spring-cloud-starter-kubernetes-client (config + discovery).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "media-service.fullname" . }}
+  labels:
+    {{- include "media-service.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "media-service.fullname" . }}
+  labels:
+    {{- include "media-service.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "media-service.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "media-service.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
