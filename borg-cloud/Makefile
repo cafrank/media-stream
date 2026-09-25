@@ -22,6 +22,7 @@ NODES          := $(NODE1_NAME) $(NODE2_NAME) $(NODE3_NAME)
 KUBECONFIG_OUT := $(call var,KUBECONFIG_OUT)
 DB_NAMESPACE   := $(call var,DB_NAMESPACE)
 REGISTRY_NAMESPACE := $(call var,REGISTRY_NAMESPACE)
+MEDIA_NAMESPACE := $(call var,MEDIA_NAMESPACE)
 
 VM_MEMORY ?= $(call var,VM_MEMORY)
 VM_CPUS   ?= $(call var,VM_CPUS)
@@ -76,6 +77,12 @@ help:
 	@echo "  Registry (namespace $(REGISTRY_NAMESPACE)):"
 	@echo "  make provision-registry  04: registry + node mirrors (restarts k3s only if needed)"
 	@echo "  make registry-test       Push a test image, pull it on every node"
+	@echo ""
+	@echo "  media-service (namespace $(MEDIA_NAMESPACE)):"
+	@echo "  make deploy-media        Build, push to the registry, helm upgrade (one command)"
+	@echo "  make deploy-media TAG=<tag> SKIP_BUILD=1   Redeploy an existing image"
+	@echo "  make media-status        Pods, ingress, image, URL"
+	@echo "  make media-test          HTTP checks through Traefik on every node"
 	@echo ""
 	@echo "  Convenience:"
 	@echo "  make ssh-node1/2/3       SSH into a node with the cluster key"
@@ -208,6 +215,18 @@ provision-registry:
 	bash 04-registry/install-registry.sh
 	@echo ">>> [04/04] Done."
 
+# TAG=<tag> SKIP_BUILD=1 redeploys an image already in the registry
+.PHONY: deploy-media
+deploy-media:
+	TAG="$(TAG)" SKIP_BUILD="$(SKIP_BUILD)" bash 05-media/deploy-media.sh
+
+.PHONY: media-status
+media-status:
+	$(KUBECTL) -n $(MEDIA_NAMESPACE) get pods,ingress -o wide
+	@$(KUBECTL) -n $(MEDIA_NAMESPACE) get deployment \
+		-o jsonpath='{range .items[*]}image: {.spec.template.spec.containers[0].image}{"\n"}{end}'
+	@echo "URL: http://$(NODE1_IP)/api/media  (any node IP)"
+
 .PHONY: k3s-uninstall
 k3s-uninstall:
 	@echo "WARNING: This removes k3s and all cluster data from every node. Ctrl-C to abort."
@@ -279,3 +298,7 @@ db-uninstall:
 .PHONY: registry-test
 registry-test:
 	bash 04-registry/registry-test.sh
+
+.PHONY: media-test
+media-test:
+	bash 05-media/media-test.sh

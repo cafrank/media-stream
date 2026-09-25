@@ -1,0 +1,24 @@
+# =============================================================================
+# BorgCloud (k3s on VirtualBox). Deployed by `make deploy-media` in borg-cloud/.
+#   - image from the in-cluster registry (localhost:5050, mirrored on each node)
+#   - MongoDB: the cluster's replica set (make provision-databases), database
+#     media; deploy-media.sh writes the Secret media-service-mongodb
+#   - Traefik (k3s built-in): http://<any node IP>/api/media
+# =============================================================================
+image:
+  repository: localhost:5050/media3
+
+mongodb:
+  enabled: false
+
+externalMongodb:
+  existingSecret: media-service-mongodb
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: ""
+      paths:
+        - path: /api/media
+          pathType: Prefix
