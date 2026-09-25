@@ -108,6 +108,11 @@ probes:
     periodSeconds: 20
     failureThreshold: 3
 
+# On shutdown, keep serving this long before the app gets SIGTERM, so the ingress
+# stops routing to the pod first (otherwise requests fail during a rollout).
+# Uses the Kubernetes preStop sleep action (1.30+). 0 disables it.
+preStopSleepSeconds: 5
+
 nodeSelector: {}
 tolerations: []
 affinity: {}

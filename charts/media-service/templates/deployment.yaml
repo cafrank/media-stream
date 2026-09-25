@@ -78,6 +78,12 @@ spec:
               path: {{ .Values.probes.path }}
               port: http
             {{- toYaml .Values.probes.liveness | nindent 12 }}
+          {{- if .Values.preStopSleepSeconds }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ .Values.preStopSleepSeconds }}
+          {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
