@@ -86,6 +86,10 @@ spec:
   podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
+  # A restarted broker is Ready once it has rejoined the metadata quorum, but may
+  # still be catching up on partitions; wait before stopping the next one, so a
+  # rolling restart doesn't drop partitions below min.insync.replicas=2.
+  minReadySeconds: 20
   selector:
     matchLabels:
       app.kubernetes.io/name: kafka
@@ -93,6 +97,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: kafka
+      annotations:
+        borg/kafka-scripts-sha: "${KAFKA_SCRIPTS_SHA}"   # set by install-kafka.sh
     spec:
       securityContext:
         fsGroup: 1000            # the image runs as appuser (uid/gid 1000)

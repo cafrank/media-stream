@@ -5,16 +5,23 @@
 # =============================================================================
 
 export KAFKA_NAMESPACE KAFKA_IMAGE KAFKA_STORAGE_SIZE KAFKA_HEAP KAFKA_MEMORY_REQUEST \
-       KAFKA_MEMORY_LIMIT KAFKA_EXTERNAL_PORT
+       KAFKA_MEMORY_LIMIT KAFKA_EXTERNAL_PORT KAFKA_SCRIPTS_SHA
 
 # Only these variables are substituted into kafka.yaml; start.sh's own shell
 # variables ($NS, $N, $HOST_IP, ...) are left alone.
 # shellcheck disable=SC2016
-KAFKA_VARS='${KAFKA_NAMESPACE} ${KAFKA_IMAGE} ${KAFKA_STORAGE_SIZE} ${KAFKA_HEAP} ${KAFKA_MEMORY_REQUEST} ${KAFKA_MEMORY_LIMIT} ${KAFKA_EXTERNAL_PORT}'
+KAFKA_VARS='${KAFKA_NAMESPACE} ${KAFKA_IMAGE} ${KAFKA_STORAGE_SIZE} ${KAFKA_HEAP} ${KAFKA_MEMORY_REQUEST} ${KAFKA_MEMORY_LIMIT} ${KAFKA_EXTERNAL_PORT} ${KAFKA_SCRIPTS_SHA}'
 
 kk() { kubectl -n "$KAFKA_NAMESPACE" "$@"; }
 
 render_kafka() { envsubst "$KAFKA_VARS" < "$1"; }
+
+# kafka_scripts_sha <manifest>: hash of the rendered kafka-scripts ConfigMap. It is
+# stamped on the pod template, so changing start.sh rolls the brokers (a ConfigMap
+# change alone would not restart them).
+kafka_scripts_sha() {
+    render_kafka "$1" | awk '/^kind: ConfigMap$/ {f = 1} /^---$/ {f = 0} f' | sha256sum | cut -c1-16
+}
 
 # kbin <pod> <script> <args...>: run a Kafka CLI tool inside a broker pod
 kbin() {

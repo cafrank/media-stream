@@ -24,7 +24,11 @@ else
 fi
 
 echo ">>> Kafka: StatefulSet kafka (3 brokers, $KAFKA_IMAGE)"
+KAFKA_SCRIPTS_SHA=$(kafka_scripts_sha 06-kafka/kafka.yaml)
 render_kafka 06-kafka/kafka.yaml | kubectl apply -f -
+# A changed pod template rolls the brokers one at a time; wait for that to finish
+# (the old pods would otherwise still count as 3 Ready)
+kk rollout status statefulset kafka --timeout=900s
 WAIT_NAMESPACE=$KAFKA_NAMESPACE wait_for "3 Kafka brokers Ready" kafka_pods_ready
 WAIT_NAMESPACE=$KAFKA_NAMESPACE wait_for "controller quorum (leader + 3 voters)" kafka_quorum_ok
 echo ">>> Kafka ready: kafka-bootstrap.$KAFKA_NAMESPACE.svc.cluster.local:9092 (in-cluster),"
