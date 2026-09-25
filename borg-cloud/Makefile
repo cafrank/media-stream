@@ -321,3 +321,9 @@ media-test:
 .PHONY: kafka-test
 kafka-test:
 	bash 06-kafka/kafka-test.sh
+
+.PHONY: kafka-failover-test
+kafka-failover-test:
+	@echo "WARNING: This deletes Kafka broker pods. Ctrl-C to abort."
+	@sleep 3
+	bash 06-kafka/kafka-failover-test.sh
