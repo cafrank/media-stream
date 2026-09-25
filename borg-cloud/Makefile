@@ -241,3 +241,9 @@ db-status:
 .PHONY: db-info
 db-info:
 	@bash 03-databases/db-info.sh
+
+.PHONY: db-failover-test
+db-failover-test:
+	@echo "WARNING: This deletes each database's primary pod. Ctrl-C to abort."
+	@sleep 3
+	bash 03-databases/db-failover-test.sh
