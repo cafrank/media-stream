@@ -67,6 +67,15 @@ REGISTRY_STORAGE_SIZE="10Gi"
 MEDIA_NAMESPACE="media"
 MEDIA_RELEASE="media-service"
 
+# --- Kafka (06-kafka) ---
+KAFKA_NAMESPACE="kafka"
+KAFKA_IMAGE="apache/kafka:4.3.1"
+KAFKA_STORAGE_SIZE="5Gi"                   # per broker, local-path
+KAFKA_HEAP="384m"                          # JVM -Xms/-Xmx
+KAFKA_MEMORY_REQUEST="512Mi"
+KAFKA_MEMORY_LIMIT="768Mi"
+KAFKA_EXTERNAL_PORT="9094"                 # hostPort on each node: <node IP>:9094
+
 # --- Derived lists (space-separated for loops) ---
 ALL_IPS="$NODE1_IP $NODE2_IP $NODE3_IP"
 ALL_NAMES="$NODE1_NAME $NODE2_NAME $NODE3_NAME"

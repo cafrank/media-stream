@@ -23,6 +23,7 @@ KUBECONFIG_OUT := $(call var,KUBECONFIG_OUT)
 DB_NAMESPACE   := $(call var,DB_NAMESPACE)
 REGISTRY_NAMESPACE := $(call var,REGISTRY_NAMESPACE)
 MEDIA_NAMESPACE := $(call var,MEDIA_NAMESPACE)
+KAFKA_NAMESPACE := $(call var,KAFKA_NAMESPACE)
 
 VM_MEMORY ?= $(call var,VM_MEMORY)
 VM_CPUS   ?= $(call var,VM_CPUS)
@@ -181,21 +182,21 @@ cluster: provision-base provision-k3s
 
 .PHONY: provision-base
 provision-base:
-	@echo ">>> [01/04] Base OS setup..."
+	@echo ">>> [01/05] Base OS setup..."
 	bash 01-base/setup-base.sh
-	@echo ">>> [01/04] Done."
+	@echo ">>> [01/05] Done."
 
 .PHONY: provision-k3s
 provision-k3s:
-	@echo ">>> [02/04] k3s HA cluster..."
+	@echo ">>> [02/05] k3s HA cluster..."
 	bash 02-k3s/install-k3s.sh
-	@echo ">>> [02/04] Done."
+	@echo ">>> [02/05] Done."
 
 .PHONY: provision-databases
 provision-databases:
-	@echo ">>> [03/04] Databases (namespace $(DB_NAMESPACE))..."
+	@echo ">>> [03/05] Databases (namespace $(DB_NAMESPACE))..."
 	bash 03-databases/install-databases.sh all
-	@echo ">>> [03/04] Done."
+	@echo ">>> [03/05] Done."
 
 .PHONY: provision-postgres
 provision-postgres:
@@ -211,9 +212,23 @@ provision-redis:
 
 .PHONY: provision-registry
 provision-registry:
-	@echo ">>> [04/04] Image registry (namespace $(REGISTRY_NAMESPACE))..."
+	@echo ">>> [04/05] Image registry (namespace $(REGISTRY_NAMESPACE))..."
 	bash 04-registry/install-registry.sh
-	@echo ">>> [04/04] Done."
+	@echo ">>> [04/05] Done."
+
+.PHONY: provision-kafka
+provision-kafka:
+	@echo ">>> [05/05] Kafka (namespace $(KAFKA_NAMESPACE))..."
+	bash 06-kafka/install-kafka.sh
+	@echo ">>> [05/05] Done."
+
+.PHONY: kafka-status
+kafka-status:
+	$(KUBECTL) -n $(KAFKA_NAMESPACE) get pods -o wide
+	@$(KUBECTL) -n $(KAFKA_NAMESPACE) exec kafka-0 -c kafka -- /opt/kafka/bin/kafka-metadata-quorum.sh \
+		--bootstrap-server localhost:9092 describe --status | grep -E '^(LeaderId|CurrentVoters|HighWatermark)'
+	@$(KUBECTL) -n $(KAFKA_NAMESPACE) exec kafka-0 -c kafka -- /opt/kafka/bin/kafka-topics.sh \
+		--bootstrap-server localhost:9092 --list
 
 # TAG=<tag> SKIP_BUILD=1 redeploys an image already in the registry
 .PHONY: deploy-media
@@ -302,3 +317,7 @@ registry-test:
 .PHONY: media-test
 media-test:
 	bash 05-media/media-test.sh
+
+.PHONY: kafka-test
+kafka-test:
+	bash 06-kafka/kafka-test.sh
