@@ -16,8 +16,8 @@ uses the cluster's MongoDB replica set (#6) and is reachable from the host at
 | Topic | Decision | Why |
 |---|---|---|
 | Image source | A `registry:3.1.2` registry inside k3s | Chosen over importing tarballs into each node or pushing to Docker Hub: nothing is published, and after the first push only changed layers move. |
-| Push path | `kubectl port-forward` to `localhost:5000` during the push | Docker allows plain-HTTP pushes to `localhost` without configuration, so **nothing on the host changes** (no `insecure-registries`, no Docker restart). |
-| Pull path | k3s `registries.yaml` on each node mirrors `localhost:5000` → `http://<node IP>:30500` (NodePort) | The same image name works for the push and for the pods. The node's own host-only IP avoids depending on how k3s routes localhost NodePorts. |
+| Push path | `kubectl port-forward` to `localhost:5050` during the push | Docker allows plain-HTTP pushes to `localhost` without configuration, so **nothing on the host changes** (no `insecure-registries`, no Docker restart). |
+| Pull path | k3s `registries.yaml` on each node mirrors `localhost:5050` → `http://<node IP>:30500` (NodePort) | The same image name works for the push and for the pods. The node's own host-only IP avoids depending on how k3s routes localhost NodePorts. |
 | Exposure | Traefik Ingress (k3s built-in), no host rule, path `/api/media` | Reachable on port 80 of any node IP, with no `/etc/hosts` edits. |
 | Database | The #6 MongoDB (`mongo` in namespace `databases`), database `media`, user `app` | The chart's own MongoDB is disabled. |
 | Base image | `eclipse-temurin:17-jre` | `openjdk:20-slim-buster` no longer exists on Docker Hub, so builds fail. Java 17 is LTS, matches the host JDK and is supported by Spring Boot 2.7. |
@@ -43,16 +43,22 @@ media-service/Dockerfile   # FROM eclipse-temurin:17-jre
 ```
 
 New `vars.sh` settings: `REGISTRY_NAMESPACE="registry"`, `REGISTRY_IMAGE="registry:3.1.2"`,
-`REGISTRY_NODEPORT="30500"`, `REGISTRY_STORAGE_SIZE="10Gi"`, `MEDIA_NAMESPACE="media"`,
-`MEDIA_RELEASE="media-service"`.
+`REGISTRY_NODEPORT="30500"`, `REGISTRY_LOCAL_PORT="5050"`, `REGISTRY_STORAGE_SIZE="10Gi"`,
+`MEDIA_NAMESPACE="media"`, `MEDIA_RELEASE="media-service"`.
+
+`REGISTRY_LOCAL_PORT` is 5050, not 5000: on this host, port 5000 is already taken by
+raq-base's `raq-registry` container. The push path refuses to start if the port is in
+use, so a push can never land in a different registry. The port is part of the image
+name (`localhost:5050/...`) and of each node's mirror key, so changing it means re-running
+`make provision-registry`.
 
 ## Makefile targets
 
 | Target | Does |
 |---|---|
 | `make provision-registry` | Step 04: the registry, then node mirror config with a rolling k3s restart where the config changed |
-| `make registry-test` | Push a test image; pull it by `localhost:5000/...` on each of the 3 nodes |
-| `make deploy-media` | Build, push `localhost:5000/media3:<git-sha>`, `helm upgrade --install` into `media` |
+| `make registry-test` | Push a test image; pull it by `localhost:5050/...` on each of the 3 nodes |
+| `make deploy-media` | Build, push `localhost:5050/media3:<git-sha>`, `helm upgrade --install` into `media` |
 | `make deploy-media TAG=<tag> SKIP_BUILD=1` | Redeploy an image already in the registry |
 | `make media-status` | Pods, Ingress, image tag and URL |
 | `make media-test` | The HTTP checks below |
@@ -74,7 +80,7 @@ New `vars.sh` settings: `REGISTRY_NAMESPACE="registry"`, `REGISTRY_IMAGE="regist
 - Node config: `/etc/rancher/k3s/registries.yaml` on each node:
   ```yaml
   mirrors:
-    "localhost:5000":
+    "localhost:5050":
       endpoint:
         - "http://<node IP>:30500"
   ```
@@ -94,9 +100,9 @@ New `vars.sh` settings: `REGISTRY_NAMESPACE="registry"`, `REGISTRY_IMAGE="regist
    as `make db-info` prints it). It is applied on every deploy (`kubectl apply` of a
    client-side dry-run), so a reinstalled database's new password is picked up. The URI
    is passed through stdin, never as a command-line argument.
-3. Start `kubectl -n registry port-forward svc/registry 5000:5000` in the background and
-   wait until `http://localhost:5000/v2/` answers. A `trap` stops it on any exit.
-4. Run `media-service/build.sh` with `IMAGE=localhost:5000/media3`,
+3. Start `kubectl -n registry port-forward svc/registry 5050:5000` in the background and
+   wait until `http://localhost:5050/v2/` answers. A `trap` stops it on any exit.
+4. Run `media-service/build.sh` with `IMAGE=localhost:5050/media3`,
    `NAMESPACE=media`, `RELEASE=media-service`, `VALUES=<repo>/charts/media-service/values-borg.yaml`,
    and `KUBECONFIG` pointing at BorgCloud. `TAG` and `SKIP_BUILD` pass through.
    `build.sh` builds, pushes and runs `helm upgrade --install ... --wait --timeout 5m`.
@@ -109,7 +115,7 @@ New `vars.sh` settings: `REGISTRY_NAMESPACE="registry"`, `REGISTRY_IMAGE="regist
 
 ```yaml
 image:
-  repository: localhost:5000/media3
+  repository: localhost:5050/media3
 mongodb:
   enabled: false
 externalMongodb:
@@ -138,7 +144,7 @@ Everything else stays at chart defaults (ClusterIP Service, RBAC, probes on `/`,
 ## Verification
 
 `make registry-test`: build a one-layer test image (`FROM busybox` + a file), push it as
-`localhost:5000/borg-registry-test:<timestamp>`, then for each node run a pod pinned to
+`localhost:5050/borg-registry-test:<timestamp>`, then for each node run a pod pinned to
 that node (`nodeName`) with that image and `imagePullPolicy: Always`, check that it
 succeeds, and delete it.
 
