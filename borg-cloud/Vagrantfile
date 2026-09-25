@@ -56,7 +56,9 @@ Vagrant.configure("2") do |config|
         vb.cpus   = VM_CPUS
         vb.gui    = false
         vb.customize ["modifyvm", :id, "--groups", VBOX_GROUP]
-        (1..2).each { |n| vb.customize ["modifyvm", :id, "--nictype#{n}", "virtio"] }
+        # Intel PRO/1000 MT (82540EM), not virtio: VirtualBox's virtio-net stalled a
+        # node's host-only NIC ("Unexpected TXQ (0) queue failure: -5"), cutting it off.
+        (1..2).each { |n| vb.customize ["modifyvm", :id, "--nictype#{n}", "82540EM"] }
       end
 
       m.vm.provision "shell", name: "hosts-and-ssh", inline: <<~SHELL
