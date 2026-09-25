@@ -1,5 +1,5 @@
 # =============================================================================
-# Makefile — BorgCloud 3-node k3s cluster lifecycle (VirtualBox + Vagrant)
+# Makefile — BorgCloud 3-node k3s cluster + data tier lifecycle (VirtualBox + Vagrant)
 # =============================================================================
 
 # ---- Vagrant ----
@@ -41,9 +41,10 @@ help:
 	@echo "================================================================"
 	@echo ""
 	@echo "  First-time setup:"
-	@echo "  make up                  Everything: vagrant-up + cluster"
+	@echo "  make up                  Everything: vagrant-up + cluster + databases"
 	@echo "  make vagrant-up          1. Create + provision all 3 VMs"
 	@echo "  make cluster             2. Base OS prep + k3s HA install + kubeconfig"
+	@echo "  make provision-databases 3. Postgres + MongoDB + Redis (3 members each)"
 	@echo ""
 	@echo "  Vagrant lifecycle:"
 	@echo "  make vagrant-up          Create/start VMs + run provisioner"
@@ -61,6 +62,15 @@ help:
 	@echo "  make provision-k3s       02: k3s HA (3 servers, embedded etcd) + kubeconfig"
 	@echo "  make k3s-uninstall       Remove k3s from all nodes (keeps VMs)"
 	@echo ""
+	@echo "  Databases (namespace $(DB_NAMESPACE), one member per node):"
+	@echo "  make provision-databases 03: operators + Postgres, MongoDB, Redis"
+	@echo "  make provision-postgres  One database (also: provision-mongo, provision-redis)"
+	@echo "  make db-status           Members, primaries and roles"
+	@echo "  make db-info             In-cluster connection strings + credentials"
+	@echo "  make db-test             Write on primary, read on every replica"
+	@echo "  make db-failover-test    Delete each primary, verify promotion (disruptive)"
+	@echo "  make db-uninstall        Delete databases, their data and operators"
+	@echo ""
 	@echo "  Convenience:"
 	@echo "  make ssh-node1/2/3       SSH into a node with the cluster key"
 	@echo "  make kubeconfig          Re-fetch kubeconfig → $(KUBECONFIG_OUT)"
@@ -75,7 +85,7 @@ help:
 	@echo ""
 
 .PHONY: up
-up: vagrant-up cluster
+up: vagrant-up cluster provision-databases
 
 # ============================================================
 # Vagrant VM lifecycle
@@ -247,3 +257,9 @@ db-failover-test:
 	@echo "WARNING: This deletes each database's primary pod. Ctrl-C to abort."
 	@sleep 3
 	bash 03-databases/db-failover-test.sh
+
+.PHONY: db-uninstall
+db-uninstall:
+	@echo "WARNING: This deletes all databases and their data in namespace $(DB_NAMESPACE). Ctrl-C to abort."
+	@sleep 3
+	bash 03-databases/uninstall-databases.sh
