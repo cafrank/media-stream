@@ -13,3 +13,18 @@ install_cnpg() {
         --namespace "$CNPG_NAMESPACE" --create-namespace \
         --wait --timeout "${DB_WAIT_TIMEOUT}s"
 }
+
+# MongoDB Controllers for Kubernetes (successor to the archived
+# mongodb-kubernetes-operator), in $DB_NAMESPACE, reconciling only MongoDBCommunity.
+# The chart also creates the mongodb-kubernetes-appdb ServiceAccount used by the pods.
+install_mongodb_operator() {
+    helm repo add mongodb https://mongodb.github.io/helm-charts --force-update >/dev/null
+    helm repo update mongodb >/dev/null
+    helm upgrade --install mongodb-kubernetes mongodb/mongodb-kubernetes \
+        --version "$MONGODB_OPERATOR_CHART_VERSION" \
+        --namespace "$DB_NAMESPACE" \
+        --set 'operator.watchedResources={mongodbcommunity}' \
+        --set operator.telemetry.enabled=false \
+        --set operator.resources.requests.cpu=100m \
+        --wait --timeout "${DB_WAIT_TIMEOUT}s"
+}

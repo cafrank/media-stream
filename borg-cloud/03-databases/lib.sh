@@ -85,3 +85,27 @@ pg_ready()   { [ "$(k get cluster pg -o jsonpath='{.status.readyInstances}')" = 
 pg_pods()    { k get pods -l cnpg.io/cluster=pg -o jsonpath='{.items[*].metadata.name}'; }
 # pg_sql <pod> <sql>: psql as the postgres superuser over the pod's local socket, database app
 pg_sql()     { k exec "$1" -c postgres -- psql -d app -v ON_ERROR_STOP=1 -tAc "$2"; }
+
+# ---- MongoDB (MongoDBCommunity "mongo") ----
+mongo_pods()  { echo mongo-0 mongo-1 mongo-2; }
+mongo_ready() { [ "$(k get mongodbcommunity mongo -o jsonpath='{.status.phase}')" = Running ]; }
+# mongo_hello <pod>: prints "<primary host> <isWritablePrimary>" (hello needs no auth)
+mongo_hello() {
+    k exec "$1" -c mongod -- env HOME=/tmp mongosh --quiet --eval \
+        'const h = db.hello(); print(h.primary + " " + h.isWritablePrimary)'
+}
+# mongo_primary: pod name of the current primary, as seen by the first member that answers
+mongo_primary() {
+    local p host
+    for p in $(mongo_pods); do
+        host=$(mongo_hello "$p" 2>/dev/null | awk '{print $1}') || continue
+        if [ -n "$host" ] && [ "$host" != undefined ]; then echo "${host%%.*}"; return 0; fi
+    done
+    return 1
+}
+# mongo_eval <pod> <uri> <js>
+mongo_eval() { k exec "$1" -c mongod -- env HOME=/tmp mongosh "$2" --quiet --eval "$3"; }
+# mongo_uri_for <pod>: direct connection to one member as the app user
+mongo_uri_for() {
+    echo "mongodb://app:$(secret_value mongo-app-password password)@$1.mongo-svc.$DB_NAMESPACE.svc.cluster.local:27017/media?authSource=admin&directConnection=true&readPreference=secondaryPreferred"
+}

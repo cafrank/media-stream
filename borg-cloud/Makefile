@@ -178,6 +178,10 @@ provision-databases:
 provision-postgres:
 	bash 03-databases/install-databases.sh postgres
 
+.PHONY: provision-mongo
+provision-mongo:
+	bash 03-databases/install-databases.sh mongo
+
 .PHONY: k3s-uninstall
 k3s-uninstall:
 	@echo "WARNING: This removes k3s and all cluster data from every node. Ctrl-C to abort."
