@@ -21,6 +21,8 @@ NODE3_NAME     := $(call var,NODE3_NAME)
 NODES          := $(NODE1_NAME) $(NODE2_NAME) $(NODE3_NAME)
 KUBECONFIG_OUT := $(call var,KUBECONFIG_OUT)
 DB_NAMESPACE   := $(call var,DB_NAMESPACE)
+REGISTRY_NAMESPACE := $(call var,REGISTRY_NAMESPACE)
+MEDIA_NAMESPACE := $(call var,MEDIA_NAMESPACE)
 
 VM_MEMORY ?= $(call var,VM_MEMORY)
 VM_CPUS   ?= $(call var,VM_CPUS)
@@ -41,10 +43,11 @@ help:
 	@echo "================================================================"
 	@echo ""
 	@echo "  First-time setup:"
-	@echo "  make up                  Everything: vagrant-up + cluster + databases"
+	@echo "  make up                  Everything: vagrant-up + cluster + databases + registry"
 	@echo "  make vagrant-up          1. Create + provision all 3 VMs"
 	@echo "  make cluster             2. Base OS prep + k3s HA install + kubeconfig"
 	@echo "  make provision-databases 3. Postgres + MongoDB + Redis (3 members each)"
+	@echo "  make provision-registry  4. In-cluster image registry + node mirrors"
 	@echo ""
 	@echo "  Vagrant lifecycle:"
 	@echo "  make vagrant-up          Create/start VMs + run provisioner"
@@ -71,6 +74,16 @@ help:
 	@echo "  make db-failover-test    Delete each primary, verify promotion (disruptive)"
 	@echo "  make db-uninstall        Delete databases, their data and operators"
 	@echo ""
+	@echo "  Registry (namespace $(REGISTRY_NAMESPACE)):"
+	@echo "  make provision-registry  04: registry + node mirrors (restarts k3s only if needed)"
+	@echo "  make registry-test       Push a test image, pull it on every node"
+	@echo ""
+	@echo "  media-service (namespace $(MEDIA_NAMESPACE)):"
+	@echo "  make deploy-media        Build, push to the registry, helm upgrade (one command)"
+	@echo "  make deploy-media TAG=<tag> SKIP_BUILD=1   Redeploy an existing image"
+	@echo "  make media-status        Pods, ingress, image, URL"
+	@echo "  make media-test          HTTP checks through Traefik on every node"
+	@echo ""
 	@echo "  Convenience:"
 	@echo "  make ssh-node1/2/3       SSH into a node with the cluster key"
 	@echo "  make kubeconfig          Re-fetch kubeconfig → $(KUBECONFIG_OUT)"
@@ -85,7 +98,7 @@ help:
 	@echo ""
 
 .PHONY: up
-up: vagrant-up cluster provision-databases
+up: vagrant-up cluster provision-databases provision-registry
 
 # ============================================================
 # Vagrant VM lifecycle
@@ -168,21 +181,21 @@ cluster: provision-base provision-k3s
 
 .PHONY: provision-base
 provision-base:
-	@echo ">>> [01/03] Base OS setup..."
+	@echo ">>> [01/04] Base OS setup..."
 	bash 01-base/setup-base.sh
-	@echo ">>> [01/03] Done."
+	@echo ">>> [01/04] Done."
 
 .PHONY: provision-k3s
 provision-k3s:
-	@echo ">>> [02/03] k3s HA cluster..."
+	@echo ">>> [02/04] k3s HA cluster..."
 	bash 02-k3s/install-k3s.sh
-	@echo ">>> [02/03] Done."
+	@echo ">>> [02/04] Done."
 
 .PHONY: provision-databases
 provision-databases:
-	@echo ">>> [03/03] Databases (namespace $(DB_NAMESPACE))..."
+	@echo ">>> [03/04] Databases (namespace $(DB_NAMESPACE))..."
 	bash 03-databases/install-databases.sh all
-	@echo ">>> [03/03] Done."
+	@echo ">>> [03/04] Done."
 
 .PHONY: provision-postgres
 provision-postgres:
@@ -195,6 +208,24 @@ provision-mongo:
 .PHONY: provision-redis
 provision-redis:
 	bash 03-databases/install-databases.sh redis
+
+.PHONY: provision-registry
+provision-registry:
+	@echo ">>> [04/04] Image registry (namespace $(REGISTRY_NAMESPACE))..."
+	bash 04-registry/install-registry.sh
+	@echo ">>> [04/04] Done."
+
+# TAG=<tag> SKIP_BUILD=1 redeploys an image already in the registry
+.PHONY: deploy-media
+deploy-media:
+	TAG="$(TAG)" SKIP_BUILD="$(SKIP_BUILD)" bash 05-media/deploy-media.sh
+
+.PHONY: media-status
+media-status:
+	$(KUBECTL) -n $(MEDIA_NAMESPACE) get pods,ingress -o wide
+	@$(KUBECTL) -n $(MEDIA_NAMESPACE) get deployment \
+		-o jsonpath='{range .items[*]}image: {.spec.template.spec.containers[0].image}{"\n"}{end}'
+	@echo "URL: http://$(NODE1_IP)/api/media  (any node IP)"
 
 .PHONY: k3s-uninstall
 k3s-uninstall:
@@ -263,3 +294,11 @@ db-uninstall:
 	@echo "WARNING: This deletes all databases and their data in namespace $(DB_NAMESPACE). Ctrl-C to abort."
 	@sleep 3
 	bash 03-databases/uninstall-databases.sh
+
+.PHONY: registry-test
+registry-test:
+	bash 04-registry/registry-test.sh
+
+.PHONY: media-test
+media-test:
+	bash 05-media/media-test.sh

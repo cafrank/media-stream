@@ -60,8 +60,9 @@ wait_for() {
     until "$@" >/dev/null 2>&1; do
         if [ "$(date +%s)" -ge "$deadline" ]; then
             echo "ERROR: timed out waiting for $desc" >&2
-            k get pods -o wide >&2 || true
-            k get events --sort-by=.lastTimestamp 2>/dev/null | tail -20 >&2 || true
+            kubectl -n "${WAIT_NAMESPACE:-$DB_NAMESPACE}" get pods -o wide >&2 || true
+            kubectl -n "${WAIT_NAMESPACE:-$DB_NAMESPACE}" get events --sort-by=.lastTimestamp 2>/dev/null \
+                | tail -20 >&2 || true
             exit 1
         fi
         sleep 5

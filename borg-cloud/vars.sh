@@ -53,6 +53,20 @@ REDIS_MEMORY="256Mi"
 SENTINEL_MEMORY="64Mi"
 DB_WAIT_TIMEOUT="300"                      # seconds, per readiness wait
 
+# --- Image registry (04-registry) ---
+REGISTRY_NAMESPACE="registry"
+REGISTRY_IMAGE="registry:3.1.2"
+REGISTRY_NODEPORT="30500"
+# Host side of the push port-forward; images are named localhost:<port>/<name>.
+# Port 5000 on this host is raq-base's registry. Changing this needs
+# make provision-registry (it is each node's mirror key).
+REGISTRY_LOCAL_PORT="5050"
+REGISTRY_STORAGE_SIZE="10Gi"
+
+# --- media-service (05-media) ---
+MEDIA_NAMESPACE="media"
+MEDIA_RELEASE="media-service"
+
 # --- Derived lists (space-separated for loops) ---
 ALL_IPS="$NODE1_IP $NODE2_IP $NODE3_IP"
 ALL_NAMES="$NODE1_NAME $NODE2_NAME $NODE3_NAME"

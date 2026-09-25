@@ -1,0 +1,90 @@
+# In-cluster image registry for BorgCloud. Pushed to through a port-forward
+# (localhost:${REGISTRY_LOCAL_PORT}); nodes pull through NodePort ${REGISTRY_NODEPORT}.
+# No auth or TLS: reachable only on the host-only network.
+# Rendered by install-registry.sh (render_registry).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${REGISTRY_NAMESPACE}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: registry-data
+  namespace: ${REGISTRY_NAMESPACE}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: ${REGISTRY_STORAGE_SIZE}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: ${REGISTRY_NAMESPACE}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # the volume is ReadWriteOnce
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: registry
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: registry
+    spec:
+      containers:
+        - name: registry
+          image: ${REGISTRY_IMAGE}
+          ports:
+            - name: http
+              containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /v2/
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/registry
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: registry-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: ${REGISTRY_NAMESPACE}
+spec:
+  selector:
+    app.kubernetes.io/name: registry
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-nodeport
+  namespace: ${REGISTRY_NAMESPACE}
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: registry
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+      nodePort: ${REGISTRY_NODEPORT}
