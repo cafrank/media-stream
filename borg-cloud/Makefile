@@ -45,9 +45,10 @@ help:
 	@echo "================================================================"
 	@echo ""
 	@echo "  First-time setup:"
-	@echo "  make up                  Everything: vagrant-up + cluster + databases + registry + kafka"
+	@echo "  make up                  Everything: vagrant-up + cluster + edge + databases + registry + kafka"
 	@echo "  make vagrant-up          1. Create + provision all 3 VMs"
 	@echo "  make cluster             2. Base OS prep + k3s HA install + kubeconfig"
+	@echo "  make provision-edge      2b. VIP $(VIP_ADDRESS) + HAProxy ingress (replaces Traefik)"
 	@echo "  make provision-databases 3. Postgres + MongoDB + Redis (3 members each)"
 	@echo "  make provision-registry  4. In-cluster image registry + node mirrors"
 	@echo "  make provision-kafka     5. Kafka, 3 brokers (KRaft)"
@@ -67,6 +68,11 @@ help:
 	@echo "  make provision-base      01: swap off, kernel modules, sysctl, packages"
 	@echo "  make provision-k3s       02: k3s HA (3 servers, embedded etcd) + kubeconfig"
 	@echo "  make k3s-uninstall       Remove k3s from all nodes (keeps VMs)"
+	@echo ""
+	@echo "  Edge (VIP $(VIP_ADDRESS); step 07-edge):"
+	@echo "  make provision-edge      Disable Traefik/servicelb, kube-vip + HAProxy on the VIP"
+	@echo "  make edge-test           VIP answers, one holder, Traefik gone, node :80 closed"
+	@echo "  make edge-failover-test  Freeze the VIP holder's VM; VIP moves (disruptive)"
 	@echo ""
 	@echo "  Databases (namespace $(DB_NAMESPACE), one member per node):"
 	@echo "  make provision-databases 03: operators + Postgres, MongoDB, Redis"
@@ -110,7 +116,7 @@ help:
 	@echo ""
 
 .PHONY: up
-up: vagrant-up cluster provision-databases provision-registry provision-kafka
+up: vagrant-up cluster provision-edge provision-databases provision-registry provision-kafka
 
 # ============================================================
 # Vagrant VM lifecycle
