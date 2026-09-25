@@ -11,8 +11,13 @@ source ./vars.sh
 source 03-databases/lib.sh
 source 06-kafka/kafka-lib.sh
 source 06-kafka/kafka-tls.sh
+source 07-edge/edge-lib.sh
 
 preflight
+# External access goes through HAProxy on the VIP (make provision-edge)
+if ! kubectl get ingressclass haproxy >/dev/null 2>&1 || [ "$(http_code "http://$VIP_ADDRESS/")" = 000 ]; then
+    die "the edge (HAProxy on $VIP_ADDRESS) is not installed (run: make provision-edge)"
+fi
 
 kubectl create namespace "$KAFKA_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 if kk get secret kafka-cluster-id >/dev/null 2>&1; then
@@ -30,6 +35,8 @@ echo ">>> Kafka TLS (CA + broker certificate for $(kafka_names))"
 ensure_kafka_tls "$tls_work"
 
 echo ">>> Kafka: StatefulSet kafka (3 brokers, $KAFKA_IMAGE)"
+# A reissued broker certificate changes the pod template, so the brokers roll
+KAFKA_TLS_SHA=$(kk get secret kafka-tls -o jsonpath='{.data.tls\.crt}' | sha256sum | cut -c1-16)
 KAFKA_SCRIPTS_SHA=$(kafka_scripts_sha 06-kafka/kafka.yaml)
 render_kafka 06-kafka/kafka.yaml | kubectl apply -f -
 # A changed pod template rolls the brokers one at a time; wait for that to finish

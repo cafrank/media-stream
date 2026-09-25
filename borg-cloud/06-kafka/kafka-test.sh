@@ -5,20 +5,25 @@
 #            auto-created topic defaults
 #   certs:   Secrets kafka-ca / kafka-tls: the broker certificate verifies against
 #            the CA, names exactly the 4 hosts, and matches its key
-#   tls:     (Task 2)
-#   host:    produce/consume from the host
+#   tls:     each of the 4 names gets a TLS handshake on VIP:443 that verifies
+#            against the CA; no SNI / an unknown name does not reach a broker
+#   host:    produce/consume over TLS through kafka.<domain>:443 (every broker's
+#            name must route to it); node:9094 no longer answers
 # =============================================================================
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source ./vars.sh
 source 03-databases/lib.sh
 source 06-kafka/kafka-lib.sh
+source 07-edge/edge-lib.sh
 
 TOPIC=borg-kafka-test
 fail=0
 ok()  { echo "  PASS  $*"; }
 bad() { echo "  FAIL  $*"; fail=1; }
-work=$(mktemp -d)
+# Scratch dir under borg-cloud/, not /tmp: it is bind-mounted into a docker container,
+# and the docker daemon doesn't necessarily see this shell's /tmp (git-ignored)
+work=$(mktemp -d "$PWD/.kafka-test.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 
 test_cluster() {
@@ -78,33 +83,77 @@ test_certs() {
     else bad "private key missing or does not match the certificate"; fi
 }
 
-# host: plaintext EXTERNAL listener on <node IP>:9094 (replaced by TLS in Task 2)
-test_host() {
-    local token out
-    host_kafka() {
-        docker run --rm -i --network host --entrypoint "/opt/kafka/bin/$1" "$KAFKA_IMAGE" "${@:2}"
-    }
-    echo ">>> From the host (EXTERNAL listener, port $KAFKA_EXTERNAL_PORT)"
-    token="host-$(date +%s)-$RANDOM"
-    if echo "$token" | host_kafka kafka-console-producer.sh --bootstrap-server "$NODE1_IP:$KAFKA_EXTERNAL_PORT" \
-            --topic "$TOPIC" --producer-property acks=all >/dev/null 2>&1; then
-        ok "produce from host via $NODE1_IP:$KAFKA_EXTERNAL_PORT"
+# handshake <name|""> <cafile>: 0 when a TLS handshake on VIP:443 with that SNI
+# name verifies against the CA and the name (no name: plain chain check)
+handshake() {
+    local out
+    if [ -n "$1" ]; then
+        out=$(openssl s_client -connect "$VIP_ADDRESS:443" -servername "$1" -CAfile "$2" \
+            -verify_return_error -verify_hostname "$1" </dev/null 2>&1 || true)
     else
-        bad "produce from host via $NODE1_IP:$KAFKA_EXTERNAL_PORT"
+        out=$(openssl s_client -connect "$VIP_ADDRESS:443" -CAfile "$2" -verify_return_error </dev/null 2>&1 || true)
     fi
-    out=$(host_kafka kafka-console-consumer.sh --bootstrap-server "$NODE3_IP:$KAFKA_EXTERNAL_PORT" --topic "$TOPIC" \
-            --from-beginning --timeout-ms 20000 2>/dev/null || true)
-    if grep -qx "$token" <<<"$out"; then ok "consume from host via $NODE3_IP:$KAFKA_EXTERNAL_PORT"
-    else bad "consume from host via $NODE3_IP:$KAFKA_EXTERNAL_PORT did not return the message"; fi
+    grep -q 'Verify return code: 0 (ok)' <<<"$out"
+}
+
+test_tls() {
+    local n
+    echo ">>> TLS via HAProxy on $VIP_ADDRESS:443 (SNI passthrough)"
+    kafka_ca_pem > "$work/ca.crt"
+    for n in $(kafka_names); do
+        if handshake "$n" "$work/ca.crt"; then ok "$n: handshake verifies against the Kafka CA"
+        else bad "$n: no verified handshake"; fi
+    done
+    if handshake "" "$work/ca.crt"; then bad "no SNI name: reached a Kafka broker"
+    else ok "no SNI name: not routed to Kafka"; fi
+    if handshake "nope.$KAFKA_DOMAIN" "$work/ca.crt"; then bad "unknown name: reached a Kafka broker"
+    else ok "unknown name: not routed to Kafka"; fi
+}
+
+test_host() {
+    local token out n ip
+    local addhosts=()
+    for n in $(kafka_names); do addhosts+=(--add-host "$n:$VIP_ADDRESS"); done
+    kafka_ca_pem > "$work/ca.crt"
+    printf 'security.protocol=SSL\nssl.truststore.type=PEM\nssl.truststore.location=/tls/ca.crt\nacks=all\n' \
+        > "$work/client.properties"
+    chmod 755 "$work"; chmod 644 "$work/ca.crt" "$work/client.properties"
+    host_kafka() {
+        docker run --rm -i --network host "${addhosts[@]}" -v "$work:/tls:ro" \
+            --entrypoint "/opt/kafka/bin/$1" "$KAFKA_IMAGE" "${@:2}"
+    }
+    echo ">>> From the host over TLS ($KAFKA_DOMAIN -> $VIP_ADDRESS:443)"
+    token="host-tls-$(date +%s)-$RANDOM"
+    if echo "$token" | host_kafka kafka-console-producer.sh --bootstrap-server "$KAFKA_DOMAIN:443" \
+            --topic "$TOPIC" --command-config /tls/client.properties >/dev/null 2>&1; then
+        ok "produce over TLS via $KAFKA_DOMAIN:443"
+    else
+        bad "produce over TLS via $KAFKA_DOMAIN:443"
+    fi
+    out=$(host_kafka kafka-console-consumer.sh --bootstrap-server "$KAFKA_DOMAIN:443" --topic "$TOPIC" \
+            --from-beginning --timeout-ms 30000 --command-config /tls/client.properties 2>/dev/null || true)
+    if grep -qx "$token" <<<"$out"; then
+        ok "consume over TLS from all 3 partitions (every kafka-N.$KAFKA_DOMAIN routes to its broker)"
+    else
+        bad "consume over TLS did not return the message"
+    fi
+    for ip in $ALL_IPS; do
+        if timeout 3 bash -c "exec 3<>/dev/tcp/$ip/$KAFKA_EXTERNAL_PORT" 2>/dev/null; then
+            bad "$ip:$KAFKA_EXTERNAL_PORT still answers"
+        else
+            ok "$ip:$KAFKA_EXTERNAL_PORT closed"
+        fi
+    done
 }
 
 kafka_pods_ready || die "Kafka is not installed or not Ready (run: make provision-kafka)"
 
 target=${1:-all}
 case "$target" in
-    all)     test_cluster; test_certs; test_host ;;
+    all)     test_cluster; test_certs; test_tls; test_host ;;
     cluster) test_cluster ;;
     certs)   test_certs ;;
+    tls)     test_tls ;;
     host)    test_host ;;
     *) die "usage: $0 [all|cluster|certs|tls|host]" ;;
 esac

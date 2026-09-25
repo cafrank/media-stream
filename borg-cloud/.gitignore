@@ -1,3 +1,4 @@
 .vagrant/
 .k3s-token
 .kafka-ca.crt
+.kafka-test.*
