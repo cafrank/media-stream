@@ -3,7 +3,8 @@
 # 06-kafka/kafka-tls.sh
 # ensure_kafka_tls <workdir>: the BorgCloud Kafka CA and the broker certificate
 # (SANs: kafka_names), created once with openssl and stored only as Secrets.
-# The broker certificate is reissued if its SANs no longer match. Keys are
+# The broker certificate is reissued if its SANs no longer match or it no longer
+# chains to the CA in Secret kafka-ca. Keys are
 # written only inside <workdir> (the caller removes it) and into the Secrets.
 # Sourced by install-kafka.sh (after vars.sh, 03-databases/lib.sh, kafka-lib.sh).
 # =============================================================================
@@ -30,12 +31,15 @@ ensure_kafka_tls() {
         have=$(cert_sans "$d/current.crt")
         state=reissued
     fi
-    if [ -n "$have" ] && [ "$have" = "$want" ]; then
+    # Keep it only if it names exactly the 4 hosts AND chains to the current CA (a
+    # replaced kafka-ca would otherwise leave a certificate no client can verify)
+    kafka_ca_pem > "$d/ca.crt"
+    if [ -n "$have" ] && [ "$have" = "$want" ] &&
+       openssl verify -CAfile "$d/ca.crt" "$d/current.crt" >/dev/null 2>&1; then
         echo "    secret/kafka-tls exists (kept)"
         return 0
     fi
 
-    kafka_ca_pem > "$d/ca.crt"
     kk get secret kafka-ca -o jsonpath='{.data.ca\.key}' | base64 -d > "$d/ca.key"
     san=""
     for n in $(kafka_names); do san="${san:+$san,}DNS:$n"; done
