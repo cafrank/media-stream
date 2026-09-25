@@ -31,6 +31,12 @@ install_mongo() {
 install_redis() {
     echo ">>> Redis: StatefulSet redis + Sentinel (3 pods)"
     ensure_secret redis-auth password
+    # podManagementPolicy can't be changed in place: replace the StatefulSet
+    # object only (--cascade=orphan keeps the pods and volumes; the new one adopts them)
+    if k get statefulset redis >/dev/null 2>&1 &&
+       [ "$(k get statefulset redis -o jsonpath='{.spec.podManagementPolicy}')" != Parallel ]; then
+        k delete statefulset redis --cascade=orphan
+    fi
     apply_manifest 03-databases/redis.yaml
     wait_for "Redis (3 pods, Sentinel sees 2 replicas)" redis_ready
 }

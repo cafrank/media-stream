@@ -12,22 +12,50 @@ metadata:
 data:
   init.sh: |
     #!/bin/sh
-    # Writes /config/redis.conf and /config/sentinel.conf for this pod.
-    # Asks the other pods' Sentinels who the primary is. If none answers
-    # (first boot of the whole set), redis-0 is the primary. This stops a
-    # restarted former primary from coming back as a second primary.
+    # Writes /config/redis.conf, and /data/sentinel.conf if it doesn't exist yet.
+    # Picks the primary in this order:
+    #  1. whatever a running peer Sentinel reports (a restarted former primary
+    #     comes back as a replica rather than as a second primary);
+    #  2. the primary this pod's own Sentinel last recorded in /data/sentinel.conf
+    #     (a full restart, e.g. VMs halted and started, keeps the latest primary);
+    #  3. redis-0, on the very first boot of the set.
+    # sentinel.conf lives on the pod's volume and Sentinel rewrites it itself, so
+    # its view of the primary, the replicas and the failover epoch survives restarts.
     set -eu
     NS=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
     SVC="redis-headless.$NS.svc.cluster.local"
     ME="$(hostname).$SVC"
-    MASTER=""
-    for i in 0 1 2; do
-      PEER="redis-$i.$SVC"
-      [ "$PEER" = "$ME" ] && continue
-      ANSWER=$(timeout 3 redis-cli -h "$PEER" -p 26379 -a "$REDIS_PASSWORD" --no-auth-warning \
-        SENTINEL get-master-addr-by-name mymaster 2>/dev/null | head -1) || true
-      if [ -n "$ANSWER" ]; then MASTER="$ANSWER"; break; fi
-    done
+    DOWN_AFTER=12000        # > Sentinel's 10s replica INFO period; see below
+    FAILOVER_TIMEOUT=60000
+
+    # ask_peers: print the primary named by the first peer Sentinel that answers
+    ask_peers() {
+      for i in 0 1 2; do
+        PEER="redis-$i.$SVC"
+        [ "$PEER" = "$ME" ] && continue
+        ANSWER=$(timeout 3 redis-cli -h "$PEER" -p 26379 -a "$REDIS_PASSWORD" --no-auth-warning \
+          SENTINEL get-master-addr-by-name mymaster 2>/dev/null | head -1) || true
+        if [ -n "$ANSWER" ]; then echo "$ANSWER"; return 0; fi
+      done
+      return 1
+    }
+
+    MASTER=$(ask_peers) || MASTER=""
+    # Peers still name this pod as primary: it went down and came back before
+    # Sentinel failed over. Wait for the failover instead of taking writes that
+    # the promoted replica would later discard. If no replica gets promoted
+    # (none healthy), carry on as primary after 60s.
+    if [ "$MASTER" = "$ME" ]; then
+      echo "init: peers still name this pod as primary; waiting for Sentinel to fail over"
+      for _ in $(seq 1 30); do
+        sleep 2
+        NOW=$(ask_peers) || NOW=""
+        if [ -n "$NOW" ] && [ "$NOW" != "$ME" ]; then MASTER="$NOW"; break; fi
+      done
+    fi
+    if [ -z "$MASTER" ] && [ -f /data/sentinel.conf ]; then
+      MASTER=$(awk '$1 == "sentinel" && $2 == "monitor" && $3 == "mymaster" {print $4}' /data/sentinel.conf)
+    fi
     [ -n "$MASTER" ] || MASTER="redis-0.$SVC"
     echo "init: this pod is $ME; primary is $MASTER"
 
@@ -43,15 +71,26 @@ data:
       echo "replicaof $MASTER 6379" >> /config/redis.conf
     fi
 
-    cat > /config/sentinel.conf <<EOF
+    # Sentinel owns /data/sentinel.conf once it exists; only refresh the timings.
+    # down-after must exceed Sentinel's 10s replica INFO period: otherwise the
+    # failover can start while the replicas' last INFO is too old to trust, and
+    # Sentinel aborts with -failover-abort-no-good-slave.
+    if [ -f /data/sentinel.conf ]; then
+      sed -i \
+        -e "s/^sentinel down-after-milliseconds mymaster .*/sentinel down-after-milliseconds mymaster $DOWN_AFTER/" \
+        -e "s/^sentinel failover-timeout mymaster .*/sentinel failover-timeout mymaster $FAILOVER_TIMEOUT/" \
+        /data/sentinel.conf
+      exit 0
+    fi
+    cat > /data/sentinel.conf <<EOF
     port 26379
     sentinel resolve-hostnames yes
     sentinel announce-hostnames yes
     sentinel announce-ip $ME
     sentinel monitor mymaster $MASTER 6379 2
     sentinel auth-pass mymaster $REDIS_PASSWORD
-    sentinel down-after-milliseconds mymaster 5000
-    sentinel failover-timeout mymaster 60000
+    sentinel down-after-milliseconds mymaster $DOWN_AFTER
+    sentinel failover-timeout mymaster $FAILOVER_TIMEOUT
     sentinel parallel-syncs mymaster 1
     requirepass $REDIS_PASSWORD
     sentinel sentinel-pass $REDIS_PASSWORD
@@ -95,6 +134,9 @@ metadata:
 spec:
   serviceName: redis-headless
   replicas: 3
+  # All pods start together, so each Sentinel can resolve whichever pod was
+  # the primary before a full restart.
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app.kubernetes.io/name: redis
@@ -103,8 +145,8 @@ spec:
       labels:
         app.kubernetes.io/name: redis
     spec:
-      # uid 999 = redis in the official image. Sentinel rewrites its own config,
-      # so /config (emptyDir) must be writable by this user.
+      # uid 999 = redis in the official image. Sentinel rewrites its own config
+      # (/data/sentinel.conf), so the volume must be writable by this user.
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
@@ -132,6 +174,8 @@ spec:
               mountPath: /scripts
             - name: config
               mountPath: /config
+            - name: data
+              mountPath: /data
       containers:
         - name: redis
           image: ${REDIS_IMAGE}
@@ -162,7 +206,7 @@ spec:
               mountPath: /config
         - name: sentinel
           image: ${REDIS_IMAGE}
-          command: ["redis-server", "/config/sentinel.conf", "--sentinel"]
+          command: ["redis-server", "/data/sentinel.conf", "--sentinel"]
           env:
             - name: REDIS_PASSWORD
               valueFrom:
@@ -183,8 +227,8 @@ spec:
             limits:
               memory: ${SENTINEL_MEMORY}
           volumeMounts:
-            - name: config
-              mountPath: /config
+            - name: data
+              mountPath: /data
       volumes:
         - name: scripts
           configMap:
