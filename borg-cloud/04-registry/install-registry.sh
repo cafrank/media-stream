@@ -23,6 +23,14 @@ node_back() {
     kubectl get node "$1" --no-headers 2>/dev/null | awk '$2 == "Ready" {ok = 1} END {exit !ok}'
 }
 
+# mirror_loaded <ip>: the running k3s has loaded this node's mirror (k3s writes the
+# containerd hosts.toml from registries.yaml at startup), so a file written by an
+# interrupted run, without the restart that follows, doesn't count as up to date
+mirror_loaded() {
+    ssh_node "$1" "sudo grep -qF '[host.\"http://$1:$REGISTRY_NODEPORT/v2\"]' \
+        '/var/lib/rancher/k3s/agent/etc/containerd/certs.d/localhost:$REGISTRY_LOCAL_PORT/hosts.toml'" 2>/dev/null
+}
+
 echo ">>> Node mirrors: localhost:$REGISTRY_LOCAL_PORT -> <node IP>:$REGISTRY_NODEPORT"
 for i in 1 2 3; do
     name_var="NODE${i}_NAME"; ip_var="NODE${i}_IP"
@@ -31,11 +39,15 @@ for i in 1 2 3; do
     want=$(render_registry 04-registry/registries.yaml)
     have=$(ssh_node "$ip" 'sudo cat /etc/rancher/k3s/registries.yaml 2>/dev/null' || true)
     if [ "$want" = "$have" ]; then
-        echo "    $name: up to date"
-        continue
+        if mirror_loaded "$ip"; then
+            echo "    $name: up to date"
+            continue
+        fi
+        echo "    $name: registries.yaml written but not loaded, restarting k3s"
+    else
+        echo "    $name: writing registries.yaml, restarting k3s"
+        printf '%s\n' "$want" | ssh_node "$ip" 'sudo tee /etc/rancher/k3s/registries.yaml >/dev/null'
     fi
-    echo "    $name: writing registries.yaml, restarting k3s"
-    printf '%s\n' "$want" | ssh_node "$ip" 'sudo tee /etc/rancher/k3s/registries.yaml >/dev/null'
     ssh_node "$ip" 'sudo systemctl restart k3s'
     WAIT_NAMESPACE=kube-system wait_for "$name back after k3s restart" node_back "$name" "$ip"
 done

@@ -26,14 +26,24 @@ start_registry_forward() {
     if ss -ltn | awk '{print $4}' | grep -qE "[:.]$REGISTRY_LOCAL_PORT\$"; then
         die "port $REGISTRY_LOCAL_PORT is already in use on this host (REGISTRY_LOCAL_PORT in vars.sh)"
     fi
-    # kubectl directly, not the kr function: backgrounding a function forks a
-    # subshell, so $! would be the subshell and kill would orphan kubectl.
-    kubectl -n "$REGISTRY_NAMESPACE" port-forward svc/registry "$REGISTRY_LOCAL_PORT:5000" >/dev/null 2>&1 &
-    REGISTRY_FORWARD_PID=$!
-    if ! retry 15 curl -sf -o /dev/null "http://localhost:$REGISTRY_LOCAL_PORT/v2/"; then
-        stop_registry_forward
-        die "registry port-forward on localhost:$REGISTRY_LOCAL_PORT did not come up"
-    fi
+    for _ in $(seq 1 30); do
+        # (Re)start kubectl if it isn't running: right after the registry's node
+        # restarts k3s, its kubelet refuses the stream and kubectl exits at once.
+        # kubectl directly, not the kr function: backgrounding a function forks a
+        # subshell, so $! would be the subshell and kill would orphan kubectl.
+        if [ -z "$REGISTRY_FORWARD_PID" ] || ! kill -0 "$REGISTRY_FORWARD_PID" 2>/dev/null; then
+            kubectl -n "$REGISTRY_NAMESPACE" port-forward svc/registry "$REGISTRY_LOCAL_PORT:5000" >/dev/null 2>&1 &
+            REGISTRY_FORWARD_PID=$!
+        fi
+        sleep 2
+        # Only trust an answer while our kubectl is alive (not another listener)
+        if kill -0 "$REGISTRY_FORWARD_PID" 2>/dev/null &&
+           curl -sf -o /dev/null "http://localhost:$REGISTRY_LOCAL_PORT/v2/"; then
+            return 0
+        fi
+    done
+    stop_registry_forward
+    die "registry port-forward on localhost:$REGISTRY_LOCAL_PORT did not come up"
 }
 
 stop_registry_forward() {
