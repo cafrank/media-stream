@@ -37,7 +37,8 @@ const RecordPoolApp = () => {
     const [selectedGenre, setSelectedGenre] = useState('');
     const [selectedVersion, setSelectedVersion] = useState('');
     const [playingTrack, setPlayingTrack] = useState<string | null>(null);
-    const [audio] = useState<HTMLAudioElement | null>(new Audio());
+    // Created lazily: Audio doesn't exist while the page is pre-rendered by expo export
+    const [audio] = useState<HTMLAudioElement | null>(() => (typeof Audio === 'undefined' ? null : new Audio()));
     const [downloadingTrackId, setDownloadingTrackId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [trackInfo, setTrackInfo] = useState<Track | null>(null);
