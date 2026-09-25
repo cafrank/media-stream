@@ -20,6 +20,7 @@ NODE2_NAME     := $(call var,NODE2_NAME)
 NODE3_NAME     := $(call var,NODE3_NAME)
 NODES          := $(NODE1_NAME) $(NODE2_NAME) $(NODE3_NAME)
 KUBECONFIG_OUT := $(call var,KUBECONFIG_OUT)
+DB_NAMESPACE   := $(call var,DB_NAMESPACE)
 
 VM_MEMORY ?= $(call var,VM_MEMORY)
 VM_CPUS   ?= $(call var,VM_CPUS)
@@ -157,15 +158,25 @@ cluster: provision-base provision-k3s
 
 .PHONY: provision-base
 provision-base:
-	@echo ">>> [01/02] Base OS setup..."
+	@echo ">>> [01/03] Base OS setup..."
 	bash 01-base/setup-base.sh
-	@echo ">>> [01/02] Done."
+	@echo ">>> [01/03] Done."
 
 .PHONY: provision-k3s
 provision-k3s:
-	@echo ">>> [02/02] k3s HA cluster..."
+	@echo ">>> [02/03] k3s HA cluster..."
 	bash 02-k3s/install-k3s.sh
-	@echo ">>> [02/02] Done."
+	@echo ">>> [02/03] Done."
+
+.PHONY: provision-databases
+provision-databases:
+	@echo ">>> [03/03] Databases (namespace $(DB_NAMESPACE))..."
+	bash 03-databases/install-databases.sh all
+	@echo ">>> [03/03] Done."
+
+.PHONY: provision-postgres
+provision-postgres:
+	bash 03-databases/install-databases.sh postgres
 
 .PHONY: k3s-uninstall
 k3s-uninstall:
@@ -210,3 +221,7 @@ cluster-status:
 	$(KUBECTL) get nodes -o wide
 	@echo ""
 	$(KUBECTL) get pods -A
+
+.PHONY: db-test
+db-test:
+	bash 03-databases/db-test.sh
