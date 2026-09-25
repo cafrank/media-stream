@@ -1,0 +1,32 @@
+# PostgreSQL: 3-instance CloudNativePG cluster (1 primary + 2 streaming replicas).
+# CNPG creates the Services pg-rw / pg-ro / pg-r and the Secret pg-app.
+# Rendered by install-databases.sh: ${...} values come from vars.sh.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg
+  namespace: ${DB_NAMESPACE}
+spec:
+  instances: 3
+  imageName: ${PG_IMAGE}
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+  storage:
+    storageClass: local-path
+    size: ${DB_STORAGE_SIZE}
+  resources:
+    requests:
+      cpu: 100m
+      memory: ${PG_MEMORY}
+    limits:
+      memory: ${PG_MEMORY}
+  postgresql:
+    parameters:
+      shared_buffers: "128MB"
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: kubernetes.io/hostname

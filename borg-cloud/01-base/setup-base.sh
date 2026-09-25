@@ -19,6 +19,14 @@ echo "=== Base: packages ==="
 apt-get update -qq
 apt-get install -y -qq curl jq nfs-common open-iscsi ca-certificates >/dev/null
 
+# VirtualBox guest clocks here run ~4% off real time. systemd-timesyncd can only
+# fix that by stepping the clock (~1.4s every ~30s), which puts Redis Sentinel
+# into TILT mode (no failover) and makes etcd report clock drift. chrony slews
+# and learns the frequency error instead; installing it replaces timesyncd.
+echo "=== Base: chrony (time sync) ==="
+apt-get install -y -qq chrony >/dev/null
+systemctl enable --now chrony >/dev/null
+
 echo "=== Base: disable swap ==="
 swapoff -a
 sed -i '/\bswap\b/s/^/#/' /etc/fstab

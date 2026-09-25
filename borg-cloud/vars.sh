@@ -38,6 +38,21 @@ K3S_SERVICE_CIDR="10.43.0.0/16"
 K3S_TOKEN_FILE=".k3s-token"            # Generated on first provision (gitignored)
 KUBECONFIG_OUT="$HOME/.kube/config-borg"
 
+# --- Databases (03-databases) ---
+DB_NAMESPACE="databases"
+CNPG_NAMESPACE="cnpg-system"
+CNPG_CHART_VERSION="0.29.1"                # cnpg/cloudnative-pg -> operator 1.30.1
+MONGODB_OPERATOR_CHART_VERSION="1.12.0"    # mongodb/mongodb-kubernetes
+PG_IMAGE="ghcr.io/cloudnative-pg/postgresql:17.11"
+MONGODB_VERSION="7.0.43"                   # quay.io/mongodb/mongodb-community-server:<v>-ubi8
+REDIS_IMAGE="redis:8.10.2-alpine"
+DB_STORAGE_SIZE="2Gi"                      # per member, local-path
+PG_MEMORY="512Mi"
+MONGO_MEMORY="512Mi"
+REDIS_MEMORY="256Mi"
+SENTINEL_MEMORY="64Mi"
+DB_WAIT_TIMEOUT="300"                      # seconds, per readiness wait
+
 # --- Derived lists (space-separated for loops) ---
 ALL_IPS="$NODE1_IP $NODE2_IP $NODE3_IP"
 ALL_NAMES="$NODE1_NAME $NODE2_NAME $NODE3_NAME"

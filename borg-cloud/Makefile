@@ -1,5 +1,5 @@
 # =============================================================================
-# Makefile — BorgCloud 3-node k3s cluster lifecycle (VirtualBox + Vagrant)
+# Makefile — BorgCloud 3-node k3s cluster + data tier lifecycle (VirtualBox + Vagrant)
 # =============================================================================
 
 # ---- Vagrant ----
@@ -20,6 +20,7 @@ NODE2_NAME     := $(call var,NODE2_NAME)
 NODE3_NAME     := $(call var,NODE3_NAME)
 NODES          := $(NODE1_NAME) $(NODE2_NAME) $(NODE3_NAME)
 KUBECONFIG_OUT := $(call var,KUBECONFIG_OUT)
+DB_NAMESPACE   := $(call var,DB_NAMESPACE)
 
 VM_MEMORY ?= $(call var,VM_MEMORY)
 VM_CPUS   ?= $(call var,VM_CPUS)
@@ -40,9 +41,10 @@ help:
 	@echo "================================================================"
 	@echo ""
 	@echo "  First-time setup:"
-	@echo "  make up                  Everything: vagrant-up + cluster"
+	@echo "  make up                  Everything: vagrant-up + cluster + databases"
 	@echo "  make vagrant-up          1. Create + provision all 3 VMs"
 	@echo "  make cluster             2. Base OS prep + k3s HA install + kubeconfig"
+	@echo "  make provision-databases 3. Postgres + MongoDB + Redis (3 members each)"
 	@echo ""
 	@echo "  Vagrant lifecycle:"
 	@echo "  make vagrant-up          Create/start VMs + run provisioner"
@@ -60,6 +62,15 @@ help:
 	@echo "  make provision-k3s       02: k3s HA (3 servers, embedded etcd) + kubeconfig"
 	@echo "  make k3s-uninstall       Remove k3s from all nodes (keeps VMs)"
 	@echo ""
+	@echo "  Databases (namespace $(DB_NAMESPACE), one member per node):"
+	@echo "  make provision-databases 03: operators + Postgres, MongoDB, Redis"
+	@echo "  make provision-postgres  One database (also: provision-mongo, provision-redis)"
+	@echo "  make db-status           Members, primaries and roles"
+	@echo "  make db-info             In-cluster connection strings + credentials"
+	@echo "  make db-test             Write on primary, read on every replica"
+	@echo "  make db-failover-test    Delete each primary, verify promotion (disruptive)"
+	@echo "  make db-uninstall        Delete databases, their data and operators"
+	@echo ""
 	@echo "  Convenience:"
 	@echo "  make ssh-node1/2/3       SSH into a node with the cluster key"
 	@echo "  make kubeconfig          Re-fetch kubeconfig → $(KUBECONFIG_OUT)"
@@ -74,7 +85,7 @@ help:
 	@echo ""
 
 .PHONY: up
-up: vagrant-up cluster
+up: vagrant-up cluster provision-databases
 
 # ============================================================
 # Vagrant VM lifecycle
@@ -157,15 +168,33 @@ cluster: provision-base provision-k3s
 
 .PHONY: provision-base
 provision-base:
-	@echo ">>> [01/02] Base OS setup..."
+	@echo ">>> [01/03] Base OS setup..."
 	bash 01-base/setup-base.sh
-	@echo ">>> [01/02] Done."
+	@echo ">>> [01/03] Done."
 
 .PHONY: provision-k3s
 provision-k3s:
-	@echo ">>> [02/02] k3s HA cluster..."
+	@echo ">>> [02/03] k3s HA cluster..."
 	bash 02-k3s/install-k3s.sh
-	@echo ">>> [02/02] Done."
+	@echo ">>> [02/03] Done."
+
+.PHONY: provision-databases
+provision-databases:
+	@echo ">>> [03/03] Databases (namespace $(DB_NAMESPACE))..."
+	bash 03-databases/install-databases.sh all
+	@echo ">>> [03/03] Done."
+
+.PHONY: provision-postgres
+provision-postgres:
+	bash 03-databases/install-databases.sh postgres
+
+.PHONY: provision-mongo
+provision-mongo:
+	bash 03-databases/install-databases.sh mongo
+
+.PHONY: provision-redis
+provision-redis:
+	bash 03-databases/install-databases.sh redis
 
 .PHONY: k3s-uninstall
 k3s-uninstall:
@@ -210,3 +239,27 @@ cluster-status:
 	$(KUBECTL) get nodes -o wide
 	@echo ""
 	$(KUBECTL) get pods -A
+
+.PHONY: db-test
+db-test:
+	bash 03-databases/db-test.sh
+
+.PHONY: db-status
+db-status:
+	@bash 03-databases/db-status.sh
+
+.PHONY: db-info
+db-info:
+	@bash 03-databases/db-info.sh
+
+.PHONY: db-failover-test
+db-failover-test:
+	@echo "WARNING: This deletes each database's primary pod. Ctrl-C to abort."
+	@sleep 3
+	bash 03-databases/db-failover-test.sh
+
+.PHONY: db-uninstall
+db-uninstall:
+	@echo "WARNING: This deletes all databases and their data in namespace $(DB_NAMESPACE). Ctrl-C to abort."
+	@sleep 3
+	bash 03-databases/uninstall-databases.sh

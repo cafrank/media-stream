@@ -1,0 +1,69 @@
+# MongoDB: 3-member replica set (all data-bearing), managed by the MongoDB operator.
+# The operator writes the connection-string Secret mongo-media-app.
+# Rendered by install-databases.sh: ${...} values come from vars.sh.
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: mongo
+  namespace: ${DB_NAMESPACE}
+spec:
+  type: ReplicaSet
+  members: 3
+  version: "${MONGODB_VERSION}"
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: app
+      db: admin
+      passwordSecretRef:
+        name: mongo-app-password
+      roles:
+        - name: readWrite
+          db: media
+      scramCredentialsSecretName: mongo-app
+      connectionStringSecretName: mongo-media-app
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.cacheSizeGB: 0.25
+  statefulSet:
+    spec:
+      template:
+        spec:
+          serviceAccountName: mongodb-kubernetes-appdb
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app: mongo-svc
+          containers:
+            - name: mongod
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: ${MONGO_MEMORY}
+                limits:
+                  memory: ${MONGO_MEMORY}
+            - name: mongodb-agent
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 96Mi
+                limits:
+                  memory: 192Mi
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+          spec:
+            storageClassName: local-path
+            resources:
+              requests:
+                storage: ${DB_STORAGE_SIZE}
+        - metadata:
+            name: logs-volume
+          spec:
+            storageClassName: local-path
+            resources:
+              requests:
+                storage: 256Mi
