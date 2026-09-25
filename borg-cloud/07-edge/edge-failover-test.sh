@@ -70,6 +70,28 @@ VBoxManage controlvm "$frozen" resume
 resync_clock
 all_ready() { [ "$(kubectl get nodes --no-headers 2>/dev/null | awk '$2 == "Ready"' | wc -l)" -eq 3 ]; }
 WAIT_NAMESPACE=kube-system wait_for "3 nodes Ready" all_ready
+# After a frozen node resumes, its kube-vip can briefly reclaim the VIP (its clock
+# and lease view are stale), so two nodes may hold it for a while. Require exactly
+# one holder, the same one, with HTTP answering, continuously for 60s.
+stable_vip() {
+    local start holder prev=""
+    start=$(date +%s)
+    while [ $(( $(date +%s) - start )) -lt 60 ]; do
+        holder=$(vip_holders)
+        [ "$(grep -c . <<<"$holder")" = 1 ] || return 1
+        [ -z "$prev" ] || [ "$holder" = "$prev" ] || return 1
+        [ "$(http_code "http://$VIP_ADDRESS/")" != 000 ] || return 1
+        prev=$holder
+        sleep 5
+    done
+}
+settle_start=$(date +%s)
+until stable_vip; do
+    [ $(( $(date +%s) - settle_start )) -lt 600 ] || die "VIP did not settle on one holder within 10 minutes"
+    echo "    VIP not stable yet (two holders, a change of holder, or no HTTP answer); watching..."
+done
+echo "    VIP stable on $(vip_holders) for 60s (settled $(( $(date +%s) - settle_start - 60 ))s after resume)"
+
 unset BORG_KUBECONFIG
 export KUBECONFIG=$KUBECONFIG_OUT
 bash 07-edge/edge-test.sh vip | tail -1
