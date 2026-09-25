@@ -15,12 +15,13 @@ Everything external goes through one address, the floating VIP **192.168.56.120*
 | Kubernetes API | `https://192.168.56.121:6443` (any node IP works) | kubeconfig `~/.kube/config-borg` |
 | HAProxy stats dashboard | `http://localhost:1024/` (metrics at `/metrics`) | `kubectl -n haproxy-controller port-forward deploy/haproxy-kubernetes-ingress 1024:1024` |
 | media-service | `http://192.168.56.120/api/media` | From the host, through HAProxy |
+| RecordPool web app | `http://192.168.56.120/` | From the host, through HAProxy; `/api/media` still goes to media-service |
 | Kafka (host, TLS) | `kafka.borg.test:443`; brokers `kafka-0/1/2.kafka.borg.test:443` | Hosts file entries + CA: `make kafka-hosts`, `make kafka-ca` |
 | Kafka (in-cluster) | `kafka-bootstrap.kafka.svc.cluster.local:9092` (plaintext) | Pods only |
 | PostgreSQL | `pg-rw.databases.svc.cluster.local:5432` (read-write), `pg-ro` (read-only) | Pods only; credentials: `make db-info` |
 | MongoDB | replica set `mongo`, database `media` | Pods only; URI: `make db-info` |
 | Redis (Sentinel) | `redis-sentinel.databases.svc.cluster.local:26379`, master `mymaster` | Pods only; password: `make db-info` |
-| Image registry | push `localhost:5050/<image>` (port-forward); nodes pull via NodePort `30500` | `make deploy-media` handles it |
+| Image registry | push `localhost:5050/<image>` (port-forward); nodes pull via NodePort `30500` | `make deploy-media` and `make deploy-record-pool` handle it |
 
 The databases and in-cluster Kafka have no host address. To reach one from your machine, port-forward it, for example `kubectl -n databases port-forward svc/pg-rw 5432:5432`. Don't use port 5000 on the host for BorgCloud: raq-base's `raq-registry` holds it.
 
@@ -121,6 +122,23 @@ Prerequisites for a deploy: `make provision-databases`, `make provision-registry
 **Never call `DELETE /api/media`: it deletes every record.** The test suite never uses it.
 
 The Helm chart is `charts/media-service` with `values-borg.yaml`. Rollouts pause 5 s on shutdown (`preStopSleepSeconds`) so requests aren't dropped.
+
+## RecordPool web app
+
+The RecordPool web app (the Expo static export of `record-pool/`, served by nginx) runs in namespace `record-pool` at `http://192.168.56.120/`, with 2 replicas spread across nodes. Its Ingress takes `/` on the VIP. media-service's `/api/media` is a longer prefix, so HAProxy still sends it to media-service, and the app calls the API on the same origin.
+
+| Task | Command | Notes |
+| --- | --- | --- |
+| Deploy or redeploy | `make deploy-record-pool` | Docker build (runs `npx expo export --platform web` inside), push `localhost:5050/record-pool:<tag>`, `helm upgrade`. Uncommitted changes under `record-pool/` give a `<sha>-dirty-<time>` tag |
+| Redeploy an existing image | `make deploy-record-pool TAG=<tag> SKIP_BUILD=1` | No build. Find the tag with `make record-pool-status` |
+| Status | `make record-pool-status` | Pods, Ingress, image tag, URL |
+| Test | `make record-pool-test` | App shell, bundle cache headers and deep links through the VIP, `/api/media` still reaches media-service, then `helm test` |
+| Logs | `kubectl -n record-pool logs deploy/record-pool --tail=100` |  |
+| Remove | `helm -n record-pool uninstall record-pool` | Stateless |
+
+Prerequisites for a deploy: `make provision-registry` and `make provision-edge` have run. The host needs only docker; Node.js runs inside the build image.
+
+The API base URL is built into the bundle: `EXPO_PUBLIC_API_URL` at build time, empty for the same origin. The Helm chart is `charts/record-pool` with `values-borg.yaml`; see its README.
 
 ## Databases: PostgreSQL, MongoDB, Redis
 
