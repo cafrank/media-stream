@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# 03-databases/db-test.sh [all|postgres|mongo]
+# 03-databases/db-test.sh [all|postgres|mongo|redis]
 # Non-destructive check: write through the primary (using the same Services and
 # credentials an app would), then read the value back on every replica.
 # =============================================================================
@@ -62,11 +62,33 @@ test_mongo() {
     done
 }
 
+redis_has_token() { [ "$(redis_cli "$1" GET borg_db_test 2>/dev/null)" = "$token" ]; }
+
+test_redis() {
+    echo ">>> Redis"
+    local via_service primary p
+    # App path: ask the redis-sentinel Service (not a specific pod) for the primary
+    via_service=$(redis_cli redis-0 -h redis-sentinel -p 26379 SENTINEL get-master-addr-by-name mymaster 2>/dev/null | head -1) || true
+    [ -n "$via_service" ] && ok "redis-sentinel Service reports primary ${via_service%%.*}" \
+        || { bad "redis-sentinel Service did not answer"; return; }
+    primary=${via_service%%.*}
+    if [ "$(redis_cli "$primary" SET borg_db_test "$token" 2>/dev/null)" = OK ]; then
+        ok "write on primary $primary"
+    else
+        bad "write on primary $primary"; return
+    fi
+    for p in $(redis_pods); do
+        [ "$p" = "$primary" ] && continue
+        if retry 15 redis_has_token "$p"; then ok "read on replica $p"; else bad "read on replica $p"; fi
+    done
+}
+
 case "$target" in
-    all)      test_postgres; test_mongo ;;
+    all)      test_postgres; test_mongo; test_redis ;;
     postgres) test_postgres ;;
     mongo)    test_mongo ;;
-    *) die "usage: $0 [all|postgres|mongo]" ;;
+    redis)    test_redis ;;
+    *) die "usage: $0 [all|postgres|mongo|redis]" ;;
 esac
 
 if [ "$fail" -eq 0 ]; then

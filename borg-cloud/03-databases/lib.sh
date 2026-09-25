@@ -109,3 +109,36 @@ mongo_eval() { k exec "$1" -c mongod -- env HOME=/tmp mongosh "$2" --quiet --eva
 mongo_uri_for() {
     echo "mongodb://app:$(secret_value mongo-app-password password)@$1.mongo-svc.$DB_NAMESPACE.svc.cluster.local:27017/media?authSource=admin&directConnection=true&readPreference=secondaryPreferred"
 }
+
+# ---- Redis + Sentinel (StatefulSet "redis") ----
+redis_pods() { echo redis-0 redis-1 redis-2; }
+# redis_cli <pod> <args...>: redis-cli in the pod's redis container, authenticated
+# shellcheck disable=SC2016
+redis_cli() {
+    local p=$1; shift
+    k exec "$p" -c redis -- sh -c 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning "$@"' _ "$@"
+}
+# sentinel_cli <args...>: ask the first Sentinel that answers
+# shellcheck disable=SC2016
+sentinel_cli() {
+    local p
+    for p in $(redis_pods); do
+        k exec "$p" -c sentinel -- sh -c \
+            'redis-cli -p 26379 -a "$REDIS_PASSWORD" --no-auth-warning "$@"' _ "$@" 2>/dev/null && return 0
+    done
+    return 1
+}
+# redis_primary: pod name of the primary according to Sentinel
+redis_primary() {
+    local h
+    h=$(sentinel_cli SENTINEL get-master-addr-by-name mymaster | head -1)
+    [ -n "$h" ] && echo "${h%%.*}"
+}
+# redis_ready: 3 pods Ready, and Sentinel knows 2 replicas and 2 other Sentinels
+redis_ready() {
+    local info
+    [ "$(k get statefulset redis -o jsonpath='{.status.readyReplicas}')" = 3 ] || return 1
+    info=$(sentinel_cli SENTINEL master mymaster) || return 1
+    [ "$(echo "$info" | awk 'p == "num-slaves" {print; exit} {p = $0}')" = 2 ] &&
+    [ "$(echo "$info" | awk 'p == "num-other-sentinels" {print; exit} {p = $0}')" = 2 ]
+}

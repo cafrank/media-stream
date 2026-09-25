@@ -182,6 +182,10 @@ provision-postgres:
 provision-mongo:
 	bash 03-databases/install-databases.sh mongo
 
+.PHONY: provision-redis
+provision-redis:
+	bash 03-databases/install-databases.sh redis
+
 .PHONY: k3s-uninstall
 k3s-uninstall:
 	@echo "WARNING: This removes k3s and all cluster data from every node. Ctrl-C to abort."
