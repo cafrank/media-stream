@@ -1,5 +1,7 @@
 #FROM --platform=linux/arm64/v8 arm64v8/openjdk:20-slim-buster
-FROM openjdk:20-slim-buster
+# openjdk images were withdrawn from Docker Hub; Temurin 17 is the maintained
+# LTS JRE and matches the JDK the jar is built with (Spring Boot 2.7 supports 17).
+FROM eclipse-temurin:17-jre
 #FROM openjdk:17.0.2-slim-buster
 # FROM ubuntu:22.04
 # RUN apt-get update \
