@@ -10,6 +10,7 @@ cd "$(dirname "$0")/.."
 source ./vars.sh
 source 03-databases/lib.sh
 source 04-registry/registry-lib.sh
+source 07-edge/edge-lib.sh
 REPO=$(cd .. && pwd)
 
 preflight
@@ -41,4 +42,4 @@ stop_registry_forward
 image=$(kubectl -n "$MEDIA_NAMESPACE" get deployment -l app.kubernetes.io/instance="$MEDIA_RELEASE" \
     -o jsonpath='{.items[0].spec.template.spec.containers[0].image}')
 echo ">>> Deployed $image"
-echo "    http://$NODE1_IP/api/media   (any node IP works; check: make media-test)"
+echo "    http://$VIP_ADDRESS/api/media   (check: make media-test)"

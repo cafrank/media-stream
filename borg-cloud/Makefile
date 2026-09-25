@@ -263,7 +263,7 @@ media-status:
 	$(KUBECTL) -n $(MEDIA_NAMESPACE) get pods,ingress -o wide
 	@$(KUBECTL) -n $(MEDIA_NAMESPACE) get deployment \
 		-o jsonpath='{range .items[*]}image: {.spec.template.spec.containers[0].image}{"\n"}{end}'
-	@echo "URL: http://$(NODE1_IP)/api/media  (any node IP)"
+	@echo "URL: http://$(VIP_ADDRESS)/api/media"
 
 .PHONY: k3s-uninstall
 k3s-uninstall:
@@ -354,3 +354,9 @@ kafka-failover-test:
 .PHONY: edge-test
 edge-test:
 	bash 07-edge/edge-test.sh
+
+.PHONY: edge-failover-test
+edge-failover-test:
+	@echo "WARNING: This freezes the VM holding the VIP for about a minute. Ctrl-C to abort."
+	@sleep 3
+	bash 07-edge/edge-failover-test.sh

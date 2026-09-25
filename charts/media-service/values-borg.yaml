@@ -3,7 +3,7 @@
 #   - image from the in-cluster registry (localhost:5050, mirrored on each node)
 #   - MongoDB: the cluster's replica set (make provision-databases), database
 #     media; deploy-media.sh writes the Secret media-service-mongodb
-#   - Traefik (k3s built-in): http://<any node IP>/api/media
+#   - HAProxy ingress on the VIP (make provision-edge): http://192.168.56.120/api/media
 # =============================================================================
 image:
   repository: localhost:5050/media3
@@ -16,7 +16,7 @@ externalMongodb:
 
 ingress:
   enabled: true
-  className: traefik
+  className: haproxy
   hosts:
     - host: ""
       paths:
