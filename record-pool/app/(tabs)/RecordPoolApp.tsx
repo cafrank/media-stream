@@ -12,145 +12,8 @@ import {
 } from 'lucide-react';
 import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 
-// Mock Data (Replace with actual API calls)
-interface Track {
-    id: string;
-    title: string;
-    artist: string;
-    genre: string;
-    version: string;
-    audioUrl: string;
-    artworkUrl: string;
-    duration: string;
-    fileFormat: 'mp3' | 'wav' | 'aiff';
-    size: string;
-}
+import { fetchStreamUrl, fetchTracks, Track } from '@/services/catalogApi';
 
-const mockTracks: Track[] = [
-    {
-        id: '1',
-        title: 'Song 1',
-        artist: 'Artist A',
-        genre: 'House',
-        version: 'Original Mix',
-        audioUrl: 'https://example.com/audio1.mp3',
-        artworkUrl: 'https://example.com/artwork1.jpg',
-        duration: '5:23',
-        fileFormat: 'mp3',
-        size: '12.5 MB',
-    },
-    {
-        id: '2',
-        title: 'Song 2',
-        artist: 'Artist B',
-        genre: 'Techno',
-        version: 'Dub Mix',
-        audioUrl: 'https://example.com/audio2.wav',
-        artworkUrl: 'https://example.com/artwork2.jpg',
-        duration: '6:10',
-        fileFormat: 'wav',
-        size: '45.8 MB',
-    },
-    {
-        id: '3',
-        title: 'Track 3',
-        artist: 'Artist C',
-        genre: 'Hip Hop',
-        version: 'Clean Edit',
-        audioUrl: 'https://example.com/audio3.mp3',
-        artworkUrl: 'https://example.com/artwork3.jpg',
-        duration: '3:45',
-        fileFormat: 'mp3',
-        size: '8.9 MB',
-    },
-    {
-        id: '4',
-        title: 'Another Song',
-        artist: 'Artist A',
-        genre: 'House',
-        version: 'Extended Mix',
-        audioUrl: 'https://example.com/audio4.aiff',
-        artworkUrl: 'https://example.com/artwork4.jpg',
-        duration: '7:42',
-        fileFormat: 'aiff',
-        size: '68.2 MB',
-    },
-    {
-        id: '5',
-        title: 'Tech Track 5',
-        artist: 'Artist D',
-        genre: 'Techno',
-        version: 'Radio Edit',
-        audioUrl: 'https://example.com/audio5.mp3',
-        artworkUrl: 'https://example.com/artwork5.jpg',
-        duration: '4:18',
-        fileFormat: 'mp3',
-        size: '9.7 MB',
-    },
-    {
-        id: '6',
-        title: 'Hip Hop Hit',
-        artist: 'Artist B',
-        genre: 'Hip Hop',
-        version: 'Instrumental',
-        audioUrl: 'https://example.com/audio6.wav',
-        artworkUrl: 'https://example.com/artwork6.jpg',
-        duration: '4:55',
-        fileFormat: 'wav',
-        size: '34.1 MB',
-    },
-    {
-        id: '7',
-        title: 'Deep House Groove',
-        artist: 'Artist E',
-        genre: 'House',
-        version: 'Original Mix',
-        audioUrl: 'https://example.com/audio7.mp3',
-        artworkUrl: 'https://example.com/artwork7.jpg',
-        duration: '6:32',
-        fileFormat: 'mp3',
-        size: '15.2 MB',
-    },
-    {
-        id: '8',
-        title: 'Industrial Techno',
-        artist: 'Artist D',
-        genre: 'Techno',
-        version: 'Live Version',
-        audioUrl: 'https://example.com/audio8.wav',
-        artworkUrl: 'https://example.com/artwork8.jpg',
-        duration: '8:01',
-        fileFormat: 'wav',
-        size: '59.9 MB',
-    },
-    {
-        id: '9',
-        title: 'Old School Hip Hop',
-        artist: 'Artist F',
-        genre: 'Hip Hop',
-        version: 'Remastered',
-        audioUrl: 'https://example.com/audio9.mp3',
-        artworkUrl: 'https://example.com/artwork9.jpg',
-        duration: '3:12',
-        fileFormat: 'mp3',
-        size: '7.6 MB',
-    },
-    {
-        id: '10',
-        title: 'Progressive House',
-        artist: 'Artist E',
-        genre: 'House',
-        version: 'Club Mix',
-        audioUrl: 'https://example.com/audio10.aiff',
-        artworkUrl: 'https://example.com/artwork10.jpg',
-        duration: '7:05',
-        fileFormat: 'aiff',
-        size: '62.7 MB',
-    },
-];
-
-const availableGenres = Array.from(new Set(mockTracks.map((track) => track.genre)));
-const availableVersions = Array.from(new Set(mockTracks.map((track) => track.version)));
 
 // Animation Variants
 const trackItemVariants = {
@@ -168,7 +31,8 @@ const ScrollArea = ({ children, style }: { children: React.ReactNode, style?: an
 }
 
 const RecordPoolApp = () => {
-    const [tracks, setTracks] = useState<Track[]>(mockTracks);
+    const [tracks, setTracks] = useState<Track[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGenre, setSelectedGenre] = useState('');
     const [selectedVersion, setSelectedVersion] = useState('');
@@ -178,6 +42,23 @@ const RecordPoolApp = () => {
     const [error, setError] = useState<string | null>(null);
     const [trackInfo, setTrackInfo] = useState<Track | null>(null);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+
+    // --- Catalog (media-service GET /api/media) ---
+    useEffect(() => {
+        const controller = new AbortController();
+        fetchTracks(controller.signal)
+            .then(setTracks)
+            .catch((err) => {
+                if (!controller.signal.aborted) setError(`Failed to load tracks: ${err.message}`);
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
+    }, []);
+
+    const availableGenres = Array.from(new Set(tracks.map((t) => t.genre).filter(Boolean))).sort();
+    const availableVersions = Array.from(new Set(tracks.map((t) => t.version).filter(Boolean))).sort();
 
 
     // --- Search & Filter ---
@@ -205,8 +86,10 @@ const RecordPoolApp = () => {
                 if (playingTrack) {
                     audio.pause();
                 }
-                audio.src = trackToPlay.audioUrl;
-                audio.play().then(() => {
+                fetchStreamUrl(trackId).then((url) => {
+                    audio.src = url;
+                    return audio.play();
+                }).then(() => {
                     setPlayingTrack(trackId);
                 }).catch(err => {
                     setError(`Error playing track: ${err.message}`);
@@ -219,18 +102,17 @@ const RecordPoolApp = () => {
 
     useEffect(() => {
         if (!audio) return;
-        audio.addEventListener('ended', () => setPlayingTrack(null));
-        audio.addEventListener('error', (e) => {
-            setError(`Audio playback error: ${e.message}`);
+        const onEnded = () => setPlayingTrack(null);
+        const onError = () => {
+            setError(`Audio playback error: ${audio.error?.message || 'the track could not be played'}`);
             setPlayingTrack(null);
-        });
+        };
+        audio.addEventListener('ended', onEnded);
+        audio.addEventListener('error', onError);
 
         return () => {
-            audio.removeEventListener('ended', () => setPlayingTrack(null));
-            audio.removeEventListener('error', (e) => {
-                setError(`Audio playback error: ${e.message}`);
-                setPlayingTrack(null);
-            });
+            audio.removeEventListener('ended', onEnded);
+            audio.removeEventListener('error', onError);
         };
     }, [audio]);
 
@@ -310,7 +192,11 @@ const RecordPoolApp = () => {
             <ScrollArea style={styles.trackListContainer}>
                 <View style={styles.trackList}>
                     <AnimatePresence>
-                        {filteredTracks.length === 0 ? (
+                        {loading ? (
+                            <View style={styles.noTracks}>
+                                <Text style={styles.noTracksTitle}>Loading tracks...</Text>
+                            </View>
+                        ) : filteredTracks.length === 0 ? (
                             <View style={styles.noTracks}>
                                 <Music style={styles.noTracksIcon} />
                                 <Text style={styles.noTracksTitle}>No Tracks Found</Text>
@@ -331,13 +217,13 @@ const RecordPoolApp = () => {
                                         onPress={() => showTrackInfo(track)}
                                     >
                                         <Image
-                                            source={{ uri: track.artworkUrl }}
+                                            source={track.artworkUrl ? { uri: track.artworkUrl } : undefined}
                                             style={styles.trackArtwork}
                                         />
                                         <View style={styles.trackTextContainer}>
                                             <Text style={styles.trackTitle}>{track.title}</Text>
                                             <Text style={styles.trackDetails}>
-                                                {track.artist} - {track.version}
+                                                {[track.artist, track.version].filter(Boolean).join(' - ')}
                                             </Text>
                                         </View>
                                     </TouchableOpacity>
@@ -398,7 +284,7 @@ const RecordPoolApp = () => {
                             <View style={styles.modalBody}>
                                 <View style={styles.modalTrackInfo}>
                                     <Image
-                                        source={{ uri: trackInfo.artworkUrl }}
+                                        source={trackInfo.artworkUrl ? { uri: trackInfo.artworkUrl } : undefined}
                                         style={styles.modalArtwork}
                                     />
                                     <View style={styles.modalTrackTextContainer}>
@@ -407,10 +293,13 @@ const RecordPoolApp = () => {
                                             Artist: {trackInfo.artist}
                                         </Text>
                                         <Text style={styles.modalTrackDetails}>
-                                            Genre: {trackInfo.genre}
+                                            Genre: {trackInfo.genre || '—'}
                                         </Text>
                                         <Text style={styles.modalTrackDetails}>
-                                            Version: {trackInfo.version}
+                                            Version: {trackInfo.version || '—'}
+                                        </Text>
+                                        <Text style={styles.modalTrackDetails}>
+                                            BPM: {trackInfo.bpm ?? '—'} · Year: {trackInfo.year ?? '—'}
                                         </Text>
                                     </View>
                                 </View>
@@ -419,13 +308,13 @@ const RecordPoolApp = () => {
                                         Additional Details
                                     </Text>
                                     <Text style={styles.modalDetailsText}>
-                                        Duration: {trackInfo.duration}
+                                        Duration: {trackInfo.duration || '—'}
                                     </Text>
                                     <Text style={styles.modalDetailsText}>
-                                        File Format: {trackInfo.fileFormat.toUpperCase()}
+                                        File Format: {trackInfo.fileFormat?.toUpperCase() ?? '—'}
                                     </Text>
                                     <Text style={styles.modalDetailsText}>
-                                        Size: {trackInfo.size}
+                                        Size: {trackInfo.size ?? '—'}
                                     </Text>
                                 </View>
                             </View>

@@ -2,7 +2,8 @@
 # =============================================================================
 # 08-record-pool/record-pool-test.sh
 # HTTP checks against the record-pool web app through HAProxy on the VIP, that
-# /api/media still reaches media-service, and the chart's helm test.
+# /api/media still reaches media-service, unknown /api paths 404, and the
+# chart's helm test.
 # =============================================================================
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -42,7 +43,7 @@ else
     bad "no /_expo/static/js bundle referenced by $base/"
 fi
 
-for route in /RecordPoolApp /TrackListScreen /no/such/route; do
+for route in /RecordPoolApp /explore /no/such/route; do
     code=$(curl -s -m 10 -o "$body" -w '%{http_code}' "$base$route" || true)
     if [ "$code" = 200 ] && grep -q '<div id="root">' "$body"; then
         ok "GET $base$route -> 200 (deep link)"
@@ -60,6 +61,14 @@ if kubectl -n "$MEDIA_NAMESPACE" get deployment "$MEDIA_RELEASE" >/dev/null 2>&1
     fi
 else
     skip "media-service is not deployed; /api/media not checked"
+fi
+
+# Unknown API paths fall through to record-pool; nginx must 404 them, not serve the app
+code=$(curl -s -m 10 -o "$body" -w '%{http_code}' "$base/api/no-such-endpoint" || true)
+if [ "$code" = 404 ] && ! grep -q '<div id="root">' "$body"; then
+    ok "GET $base/api/no-such-endpoint -> 404 (not the app shell)"
+else
+    bad "GET $base/api/no-such-endpoint -> $code (expected 404)"
 fi
 
 if helm test "$RECORD_POOL_RELEASE" -n "$RECORD_POOL_NAMESPACE" --timeout 2m >/dev/null 2>&1; then

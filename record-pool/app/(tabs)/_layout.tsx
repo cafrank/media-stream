@@ -40,13 +40,6 @@ export default function TabLayout() {
         tabBarIcon: ({ color }) => <IconSymbol size={28} name="music.note.list" color={color} />,
       }}
       />
-      <Tabs.Screen
-      name="TrackListScreen"
-      options={{
-        title: 'SQL Track List',
-        tabBarIcon: ({ color }) => <IconSymbol size={28} name="music.note.list" color={color} />,
-      }}
-      />
 
       <Tabs.Screen
       name="explore"
