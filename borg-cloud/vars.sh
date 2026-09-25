@@ -76,6 +76,14 @@ KAFKA_MEMORY_REQUEST="512Mi"
 KAFKA_MEMORY_LIMIT="768Mi"
 KAFKA_EXTERNAL_PORT="9094"                 # hostPort on each node: <node IP>:9094
 
+# --- Edge: floating VIP + HAProxy ingress (07-edge) ---
+VIP_ADDRESS="192.168.56.120"               # kube-vip ARP on CLUSTER_IFACE; HAProxy's LoadBalancer IP
+KUBE_VIP_CHART_VERSION="0.11.1"            # kube-vip/kube-vip -> kube-vip v1.2.3
+HAPROXY_CHART_VERSION="1.54.2"             # haproxytech/kubernetes-ingress -> HAProxy 3.2.15
+HAPROXY_NAMESPACE="haproxy-controller"
+HAPROXY_MEMORY_REQUEST="64Mi"
+HAPROXY_MEMORY_LIMIT="256Mi"
+
 # --- Derived lists (space-separated for loops) ---
 ALL_IPS="$NODE1_IP $NODE2_IP $NODE3_IP"
 ALL_NAMES="$NODE1_NAME $NODE2_NAME $NODE3_NAME"

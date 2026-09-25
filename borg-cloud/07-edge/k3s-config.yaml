@@ -1,0 +1,5 @@
+# /etc/rancher/k3s/config.yaml (BorgCloud). Read by k3s at startup.
+# Traefik and servicelb are replaced by HAProxy on a kube-vip VIP (07-edge).
+disable:
+  - traefik
+  - servicelb

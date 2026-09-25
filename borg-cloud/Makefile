@@ -24,6 +24,7 @@ DB_NAMESPACE   := $(call var,DB_NAMESPACE)
 REGISTRY_NAMESPACE := $(call var,REGISTRY_NAMESPACE)
 MEDIA_NAMESPACE := $(call var,MEDIA_NAMESPACE)
 KAFKA_NAMESPACE := $(call var,KAFKA_NAMESPACE)
+VIP_ADDRESS := $(call var,VIP_ADDRESS)
 
 VM_MEMORY ?= $(call var,VM_MEMORY)
 VM_CPUS   ?= $(call var,VM_CPUS)
@@ -232,6 +233,12 @@ provision-kafka:
 	bash 06-kafka/install-kafka.sh
 	@echo ">>> [05/05] Done."
 
+.PHONY: provision-edge
+provision-edge:
+	@echo ">>> [edge] VIP $(VIP_ADDRESS) + HAProxy ingress (replaces Traefik)..."
+	bash 07-edge/install-edge.sh
+	@echo ">>> [edge] Done."
+
 .PHONY: kafka-status
 kafka-status:
 	$(KUBECTL) -n $(KAFKA_NAMESPACE) get pods -o wide
@@ -343,3 +350,7 @@ kafka-failover-test:
 	@echo "WARNING: This deletes Kafka broker pods. Ctrl-C to abort."
 	@sleep 3
 	bash 06-kafka/kafka-failover-test.sh
+
+.PHONY: edge-test
+edge-test:
+	bash 07-edge/edge-test.sh

@@ -16,6 +16,13 @@ if [ ! -s "$K3S_TOKEN_FILE" ]; then
 fi
 K3S_TOKEN=$(cat "$K3S_TOKEN_FILE")
 
+# k3s reads /etc/rancher/k3s/config.yaml at startup: Traefik and servicelb stay off
+# (07-edge replaces them with HAProxy on a kube-vip VIP)
+for ip in $ALL_IPS; do
+    ssh_node "$ip" 'sudo mkdir -p /etc/rancher/k3s && sudo tee /etc/rancher/k3s/config.yaml >/dev/null' \
+        < 07-edge/k3s-config.yaml
+done
+
 # install_server <node-ip> [join-ip]
 install_server() {
     local ip=$1 join=${2:-}
