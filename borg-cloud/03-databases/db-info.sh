@@ -26,8 +26,10 @@ fi
 echo ""
 echo "MongoDB"
 if k get secret mongo-media-app >/dev/null 2>&1; then
-    echo "  uri:      $(secret_value mongo-media-app connectionString.standard)"
-    echo "  secret:   mongo-media-app (key: connectionString.standard)"
+    echo "  uri:      $(mongo_app_uri)"
+    echo "  database: media   user: app (auth database: admin)"
+    echo "  secret:   mongo-media-app (key: connectionString.standard; its URI"
+    echo "            ends in /admin, so set the database to media when using it)"
 else
     echo "  not installed"
 fi

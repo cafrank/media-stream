@@ -105,6 +105,12 @@ mongo_primary() {
 }
 # mongo_eval <pod> <uri> <js>
 mongo_eval() { k exec "$1" -c mongod -- env HOME=/tmp mongosh "$2" --quiet --eval "$3"; }
+# mongo_app_uri: the operator's replica-set URI, with media as the default database.
+# The operator's own URI (secret mongo-media-app) points at /admin, where the app
+# user has no rights, so a driver that uses the URI's database would be refused.
+mongo_app_uri() {
+    secret_value mongo-media-app connectionString.standard | sed 's|/admin?|/media?authSource=admin\&|'
+}
 # mongo_uri_for <pod>: direct connection to one member as the app user
 mongo_uri_for() {
     echo "mongodb://app:$(secret_value mongo-app-password password)@$1.mongo-svc.$DB_NAMESPACE.svc.cluster.local:27017/media?authSource=admin&directConnection=true&readPreference=secondaryPreferred"

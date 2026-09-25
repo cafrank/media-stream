@@ -47,11 +47,11 @@ test_mongo() {
     echo ">>> MongoDB"
     local primary uri p
     primary=$(mongo_primary 2>/dev/null) || { bad "no primary found"; return; }
-    uri=$(secret_value mongo-media-app connectionString.standard 2>/dev/null) && [ -n "$uri" ] \
+    uri=$(mongo_app_uri 2>/dev/null) && [ -n "$uri" ] \
         || { bad "secret mongo-media-app missing"; return; }
-    # App path: the operator's replica-set connection string, majority write concern
+    # App path: the URI's own default database (what a driver like Spring uses), majority write
     if mongo_eval "$primary" "$uri" \
-        "db.getSiblingDB('media').borg_db_test.replaceOne({_id: 1}, {_id: 1, v: '$token'}, {upsert: true, writeConcern: {w: 'majority', wtimeout: 10000}})" >/dev/null; then
+        "db.borg_db_test.replaceOne({_id: 1}, {_id: 1, v: '$token'}, {upsert: true, writeConcern: {w: 'majority', wtimeout: 10000}})" >/dev/null; then
         ok "majority write via connection string (primary $primary)"
     else
         bad "majority write via connection string"; return
