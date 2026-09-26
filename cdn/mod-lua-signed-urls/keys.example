@@ -1,0 +1,5 @@
+# /etc/httpd/signed-urls/keys (owner root:apache, mode 0640). Reread every 60 s.
+# <KeyName> <base64url-encoded key>. Generate a 16-byte key with:
+#   head -c 16 /dev/urandom | base64 | tr '+/' '-_'
+# Keep the previous key listed while media-service rolls over to the new one, then remove it.
+mykey3 REPLACE_WITH_GENERATED_KEY

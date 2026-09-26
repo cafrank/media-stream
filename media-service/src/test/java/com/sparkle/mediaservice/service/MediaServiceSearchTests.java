@@ -31,7 +31,7 @@ class MediaServiceSearchTests {
 
     @Test
     void searchPagesNewestFirstAndCountsAllMatches() {
-        Media m = Media.builder().id("abc").songId(402391).title("HIGHLIFE").artist("KARMA").isVideo(true).build();
+        Media m = Media.builder().id("abc").songId(402391).title("HIGHLIFE").artist("KARMA").isVideo(true).length(300).build();
         when(mongoTemplate.find(any(Query.class), eq(Media.class))).thenReturn(List.of(m));
         when(mongoTemplate.count(any(Query.class), eq(Media.class))).thenReturn(123L);
 
@@ -57,6 +57,7 @@ class MediaServiceSearchTests {
         assertEquals("abc", result.getItems().get(0).getId());
         assertEquals(402391, result.getItems().get(0).getSong_id());
         assertEquals(Boolean.TRUE, result.getItems().get(0).getIs_video());
+        assertEquals(300, result.getItems().get(0).getLength());
     }
 
     @Test

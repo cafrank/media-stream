@@ -22,3 +22,18 @@ ingress:
       paths:
         - path: /api/media
           pathType: Prefix
+
+# URL signing key for the CDN origin (www.my12inch.com, mod_lua signed_urls.lua; see
+# cdn/mod-lua-signed-urls/README.md). Secret media-service-signing: SIGNING_KEY_NAME, SIGNING_KEY
+# (base64url). Without it /stream and /download answer 503.
+extraEnv:
+  - name: SIGNING_KEY_NAME
+    valueFrom:
+      secretKeyRef:
+        name: media-service-signing
+        key: SIGNING_KEY_NAME
+  - name: SIGNING_KEY
+    valueFrom:
+      secretKeyRef:
+        name: media-service-signing
+        key: SIGNING_KEY

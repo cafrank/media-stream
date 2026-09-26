@@ -88,8 +88,14 @@ if kubectl -n "$MEDIA_NAMESPACE" get deployment "$MEDIA_RELEASE" >/dev/null 2>&1
         if grep -qi '^content-disposition: *attachment' <<<"$headers"; then
             ok "CDN answers the download URL with Content-Disposition: attachment"
         else
-            warn "CDN sends no Content-Disposition: attachment for download=1, so browsers play the file instead of saving it (see docs/borg-cloud-runbook.md, RecordPool downloads)"
+            bad "CDN sends no Content-Disposition: attachment for download=1 (see cdn/mod-lua-signed-urls/README.md)"
         fi
+        # The origin enforces signatures (#17): the same file without a signature, or with a tampered one, is refused
+        unsigned="${url%%\?*}"
+        code=$(curl -s -m 15 -o /dev/null -w '%{http_code}' -I "$unsigned" || true)
+        if [ "$code" = 403 ]; then ok "CDN refuses the unsigned URL (403)"; else bad "CDN answers the unsigned URL $unsigned with $code (expected 403)"; fi
+        code=$(curl -s -m 15 -o /dev/null -w '%{http_code}' -I "${url/Expires=/Expires=9}" || true)
+        if [ "$code" = 403 ]; then ok "CDN refuses a tampered signed URL (403)"; else bad "CDN answers a tampered signed URL with $code (expected 403)"; fi
     fi
 else
     skip "media-service is not deployed; /api/media not checked"
