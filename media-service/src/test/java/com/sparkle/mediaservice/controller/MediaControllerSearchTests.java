@@ -3,6 +3,7 @@ package com.sparkle.mediaservice.controller;
 import com.sparkle.mediaservice.dto.MediaFacets;
 import com.sparkle.mediaservice.dto.MediaPage;
 import com.sparkle.mediaservice.dto.MediaResponse;
+import com.sparkle.mediaservice.service.CdnSigner;
 import com.sparkle.mediaservice.service.MediaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class MediaControllerSearchTests {
         when(mediaService.search(any(), any(), any(), anyInt(), anyInt())).thenAnswer(inv -> MediaPage.builder()
                 .items(List.of(MediaResponse.builder().id("abc").title("HIGHLIFE").build()))
                 .page(inv.getArgument(3)).size(inv.getArgument(4)).total(40147).build());
-        mvc = MockMvcBuilders.standaloneSetup(new MediaController(mediaService)).build();
+        mvc = MockMvcBuilders.standaloneSetup(new MediaController(mediaService, new CdnSigner("", ""))).build();
     }
 
     @Test

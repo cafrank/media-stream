@@ -101,6 +101,7 @@ public class MediaService {
                 .year (media.getYear())
                 .is_video(media.getIsVideo())
                 .is_karaoke(media.getIsKaraoke())
+                .length(media.getLength())
                 .comment(media.getArtist())
                 .cover_url(media.getCoverUrl())
                 .price(media.getPrice())
