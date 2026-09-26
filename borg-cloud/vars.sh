@@ -67,6 +67,10 @@ REGISTRY_STORAGE_SIZE="10Gi"
 MEDIA_NAMESPACE="media"
 MEDIA_RELEASE="media-service"
 
+# --- record-pool web app (08-record-pool) ---
+RECORD_POOL_NAMESPACE="record-pool"
+RECORD_POOL_RELEASE="record-pool"
+
 # --- Kafka (06-kafka) ---
 KAFKA_NAMESPACE="kafka"
 KAFKA_IMAGE="apache/kafka:4.3.1"

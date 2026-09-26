@@ -23,6 +23,7 @@ KUBECONFIG_OUT := $(call var,KUBECONFIG_OUT)
 DB_NAMESPACE   := $(call var,DB_NAMESPACE)
 REGISTRY_NAMESPACE := $(call var,REGISTRY_NAMESPACE)
 MEDIA_NAMESPACE := $(call var,MEDIA_NAMESPACE)
+RECORD_POOL_NAMESPACE := $(call var,RECORD_POOL_NAMESPACE)
 KAFKA_NAMESPACE := $(call var,KAFKA_NAMESPACE)
 VIP_ADDRESS := $(call var,VIP_ADDRESS)
 KAFKA_DOMAIN := $(call var,KAFKA_DOMAIN)
@@ -93,6 +94,13 @@ help:
 	@echo "  make deploy-media TAG=<tag> SKIP_BUILD=1   Redeploy an existing image"
 	@echo "  make media-status        Pods, ingress, image, URL"
 	@echo "  make media-test          HTTP checks through Traefik on every node"
+	@echo ""
+	@echo "  record-pool web app (namespace $(RECORD_POOL_NAMESPACE); step 08-record-pool):"
+	@echo "  make deploy-record-pool   Build, push to the registry, helm upgrade (one command)"
+	@echo "  make deploy-record-pool TAG=<tag> SKIP_BUILD=1   Redeploy an existing image"
+	@echo "  make record-pool-status   Pods, ingress, image, URL"
+	@echo "  make record-pool-test     HTTP checks on the VIP (app, deep links, /api/media) + helm test"
+	@echo "    URL: http://$(VIP_ADDRESS)/"
 	@echo ""
 	@echo "  Kafka (namespace $(KAFKA_NAMESPACE); step 06-kafka):"
 	@echo "  make provision-kafka     3 brokers, one per node (KRaft); TLS for host clients"
@@ -287,6 +295,18 @@ media-status:
 		-o jsonpath='{range .items[*]}image: {.spec.template.spec.containers[0].image}{"\n"}{end}'
 	@echo "URL: http://$(VIP_ADDRESS)/api/media"
 
+# TAG=<tag> SKIP_BUILD=1 redeploys an image already in the registry
+.PHONY: deploy-record-pool
+deploy-record-pool:
+	TAG="$(TAG)" SKIP_BUILD="$(SKIP_BUILD)" bash 08-record-pool/deploy-record-pool.sh
+
+.PHONY: record-pool-status
+record-pool-status:
+	$(KUBECTL) -n $(RECORD_POOL_NAMESPACE) get pods,ingress -o wide
+	@$(KUBECTL) -n $(RECORD_POOL_NAMESPACE) get deployment \
+		-o jsonpath='{range .items[*]}image: {.spec.template.spec.containers[0].image}{"\n"}{end}'
+	@echo "URL: http://$(VIP_ADDRESS)/"
+
 .PHONY: k3s-uninstall
 k3s-uninstall:
 	@echo "WARNING: This removes k3s and all cluster data from every node. Ctrl-C to abort."
@@ -362,6 +382,10 @@ registry-test:
 .PHONY: media-test
 media-test:
 	bash 05-media/media-test.sh
+
+.PHONY: record-pool-test
+record-pool-test:
+	bash 08-record-pool/record-pool-test.sh
 
 .PHONY: kafka-test
 kafka-test:

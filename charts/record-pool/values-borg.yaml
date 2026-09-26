@@ -1,0 +1,21 @@
+# =============================================================================
+# BorgCloud (k3s on VirtualBox). Deployed by `make deploy-record-pool` in borg-cloud/.
+#   - image from the in-cluster registry (localhost:5050, mirrored on each node)
+#   - HAProxy ingress on the VIP (make provision-edge): http://192.168.56.120/
+#     media-service keeps the longer /api/media prefix on the same address
+# =============================================================================
+image:
+  repository: localhost:5050/record-pool
+
+# One per node where possible, so a node loss doesn't take the app down
+replicaCount: 2
+podAntiAffinity: soft
+
+ingress:
+  enabled: true
+  className: haproxy
+  hosts:
+    - host: ""
+      paths:
+        - path: /
+          pathType: Prefix

@@ -1,0 +1,20 @@
+record-pool {{ include "record-pool.image" . }} deployed to namespace {{ .Release.Namespace }}.
+
+Service: {{ include "record-pool.fullname" . }}:{{ .Values.service.port }}
+
+{{- if .Values.ingress.enabled }}
+Ingress:
+{{- range .Values.ingress.hosts }}
+{{- $host := .host }}
+{{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host | default "<ingress address>" }}{{ .path }}
+{{- end }}
+{{- end }}
+{{- else if eq .Values.service.type "NodePort" }}
+NodePort:
+  kubectl -n {{ .Release.Namespace }} get svc {{ include "record-pool.fullname" . }} -o jsonpath='{.spec.ports[0].nodePort}'
+{{- else }}
+Port-forward:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "record-pool.fullname" . }} 8080:{{ .Values.service.port }}
+  open http://localhost:8080/
+{{- end }}
