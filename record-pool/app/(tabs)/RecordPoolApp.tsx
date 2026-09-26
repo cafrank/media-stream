@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { FlatList, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 
-import { fetchStreamUrl, fetchTracks, Track } from '@/services/catalogApi';
+import { fetchDownloadUrl, fetchStreamUrl, fetchTracks, Track } from '@/services/catalogApi';
 
 
 interface TrackRowProps {
@@ -176,13 +176,19 @@ const RecordPoolApp = () => {
     // --- Download ---
     const handleDownload = useCallback((trackId: string) => {
         setDownloadingTrackId(trackId);
-        // Simulate download with a delay
-        setTimeout(() => {
-            setDownloadingTrackId(null);
-            // In a real app, you would trigger a download here, e.g.,:
-            // window.location.href = `/api/download?trackId=${trackId}`;
-            console.log(`Downloading track: ${trackId}`);
-        }, 2000); // Simulate a 2-second download
+        fetchDownloadUrl(trackId)
+            .then(({ url }) => {
+                // The CDN is another origin, so the download attribute is ignored: the browser saves the
+                // file because the origin answers the signed download URL with Content-Disposition: attachment
+                const link = document.createElement('a');
+                link.href = url;
+                link.rel = 'noopener';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            })
+            .catch((err) => setError(`Error downloading track: ${err.message}`))
+            .finally(() => setDownloadingTrackId(null));
     }, []);
 
     const showTrackInfo = useCallback((track: Track) => {

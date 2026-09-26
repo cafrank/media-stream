@@ -33,13 +33,15 @@ interface MediaResponse {
     cover_url: string | null;
 }
 
-async function get(path: string, signal?: AbortSignal): Promise<Response> {
-    const response = await fetch(`${API_URL}${path}`, { signal });
+async function request(method: 'GET' | 'POST', path: string, signal?: AbortSignal): Promise<Response> {
+    const response = await fetch(`${API_URL}${path}`, { method, signal });
     if (!response.ok) {
-        throw new Error(`GET ${path}: HTTP ${response.status}`);
+        throw new Error(`${method} ${path}: HTTP ${response.status}`);
     }
     return response;
 }
+
+const get = (path: string, signal?: AbortSignal) => request('GET', path, signal);
 
 function formatDuration(seconds: number | null): string {
     if (seconds == null || seconds < 0) return '';
@@ -74,4 +76,17 @@ export async function fetchTracks(signal?: AbortSignal): Promise<Track[]> {
 export async function fetchStreamUrl(id: string): Promise<string> {
     const response = await get(`/api/media/${encodeURIComponent(id)}/stream`);
     return (await response.text()).trim();
+}
+
+/** media-service `SignedUrlResponse` (POST /api/media/{id}/download) */
+export interface SignedUrl {
+    url: string;
+    /** ISO-8601 */
+    expiresAt: string;
+}
+
+/** A short-lived signed URL that downloads the track's file (the CDN answers with Content-Disposition: attachment). */
+export async function fetchDownloadUrl(id: string): Promise<SignedUrl> {
+    const response = await request('POST', `/api/media/${encodeURIComponent(id)}/download`);
+    return response.json();
 }
