@@ -2,7 +2,7 @@
 
 - **Issue:** #16 (part of epic #1)
 - **Date:** 2026-09-26
-- **Status:** Design approved, awaiting spec review
+- **Status:** Implemented
 
 ## Goal
 
