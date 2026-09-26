@@ -21,8 +21,9 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 /**
  * The catalog, one server page at a time. Changing a filter (q is debounced 300 ms) starts again at page 0
  * and aborts the request in flight, so an older response never replaces a newer one. loadMore fetches the
- * next page; it does nothing while a page is loading or when every match is loaded. After a failed page,
- * calling loadMore again retries it.
+ * next page; it does nothing while a page is loading, after a page failed, or when every match is loaded.
+ * retry fetches the page that failed. Tracks already loaded are not added twice when the catalog changed
+ * between pages (skip/limit paging shifts by the number of inserted tracks).
  */
 export function useTrackSearch(filters: TrackFilters, pageSize = 50) {
     const q = useDebouncedValue(filters.q.trim(), 300);
@@ -36,6 +37,8 @@ export function useTrackSearch(filters: TrackFilters, pageSize = 50) {
     const controllerRef = useRef<AbortController | null>(null);
     const loadingRef = useRef(false); // set synchronously: onEndReached can fire twice before a re-render
     const nextPageRef = useRef(0);
+    // A failed page is retried only by retry(): the list's onEndReached would not fire again by itself
+    const failedRef = useRef(false);
 
     const load = useCallback(
         (page: number) => {
@@ -43,17 +46,24 @@ export function useTrackSearch(filters: TrackFilters, pageSize = 50) {
             const controller = new AbortController();
             controllerRef.current = controller;
             loadingRef.current = true;
+            failedRef.current = false;
             setLoading(true);
             setError(null);
             searchTracks({ q, genre, version, page, size: pageSize }, controller.signal)
                 .then((result) => {
                     if (controller.signal.aborted) return;
-                    setTracks((loaded) => (page === 0 ? result.tracks : [...loaded, ...result.tracks]));
+                    setTracks((loaded) => {
+                        if (page === 0) return result.tracks;
+                        const seen = new Set(loaded.map((t) => t.id));
+                        return [...loaded, ...result.tracks.filter((t) => !seen.has(t.id))];
+                    });
                     setTotal(result.total);
                     nextPageRef.current = page + 1;
                 })
                 .catch((err) => {
-                    if (!controller.signal.aborted) setError(err.message);
+                    if (controller.signal.aborted) return;
+                    failedRef.current = true;
+                    setError(err.message);
                 })
                 .finally(() => {
                     if (controllerRef.current !== controller) return;
@@ -74,9 +84,14 @@ export function useTrackSearch(filters: TrackFilters, pageSize = 50) {
     }, [load]);
 
     const loadMore = useCallback(() => {
-        if (loadingRef.current || nextPageRef.current === 0 || tracks.length >= total) return;
+        if (loadingRef.current || failedRef.current || nextPageRef.current === 0 || tracks.length >= total) return;
         load(nextPageRef.current);
     }, [load, tracks.length, total]);
 
-    return { tracks, total, loading, error, loadMore };
+    /** Fetch the page that failed again (page 0 when the first page failed) */
+    const retry = useCallback(() => {
+        if (!loadingRef.current) load(nextPageRef.current);
+    }, [load]);
+
+    return { tracks, total, loading, error, loadMore, retry };
 }

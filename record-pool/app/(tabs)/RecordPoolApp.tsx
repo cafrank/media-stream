@@ -79,7 +79,7 @@ const RecordPoolApp = () => {
     const [selectedVersion, setSelectedVersion] = useState('');
     const [facets, setFacets] = useState<Facets>({ genres: [], versions: [] });
     // Filtering and paging happen in media-service (GET /api/media/search)
-    const { tracks, total, loading, error: searchError, loadMore } = useTrackSearch({
+    const { tracks, total, loading, error: searchError, loadMore, retry } = useTrackSearch({
         q: searchTerm,
         genre: selectedGenre,
         version: selectedVersion,
@@ -258,10 +258,14 @@ const RecordPoolApp = () => {
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={
-                    loading && tracks.length > 0 ? (
+                    tracks.length === 0 ? null : loading ? (
                         <View style={styles.noTracks}>
                             <Text style={styles.noTracksText}>Loading more...</Text>
                         </View>
+                    ) : searchError ? (
+                        <TouchableOpacity style={styles.noTracks} onPress={retry}>
+                            <Text style={styles.noTracksText}>Couldn't load more tracks, tap to retry</Text>
+                        </TouchableOpacity>
                     ) : null
                 }
                 ListEmptyComponent={
@@ -269,6 +273,12 @@ const RecordPoolApp = () => {
                         <View style={styles.noTracks}>
                             <Text style={styles.noTracksTitle}>Loading tracks...</Text>
                         </View>
+                    ) : searchError ? (
+                        <TouchableOpacity style={styles.noTracks} onPress={retry}>
+                            <AlertTriangle style={styles.noTracksIcon} />
+                            <Text style={styles.noTracksTitle}>Couldn't load tracks</Text>
+                            <Text style={styles.noTracksText}>Tap to retry</Text>
+                        </TouchableOpacity>
                     ) : (
                         <View style={styles.noTracks}>
                             <Music style={styles.noTracksIcon} />
