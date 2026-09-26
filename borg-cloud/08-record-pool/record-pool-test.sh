@@ -2,8 +2,9 @@
 # =============================================================================
 # 08-record-pool/record-pool-test.sh
 # HTTP checks against the record-pool web app through HAProxy on the VIP, that
-# /api/media still reaches media-service, unknown /api paths 404, and the
-# chart's helm test.
+# /api/media still reaches media-service, that a track's signed stream and
+# download URLs resolve on the CDN, unknown /api paths 404, and the chart's
+# helm test.
 # =============================================================================
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -15,6 +16,7 @@ fail=0
 ok()   { echo "  PASS  $*"; }
 bad()  { echo "  FAIL  $*"; fail=1; }
 skip() { echo "  SKIP  $*"; }
+warn() { echo "  WARN  $*"; }
 
 body=$(mktemp)
 trap 'rm -f "$body"' EXIT
@@ -58,6 +60,36 @@ if kubectl -n "$MEDIA_NAMESPACE" get deployment "$MEDIA_RELEASE" >/dev/null 2>&1
         ok "GET $base/api/media -> 200 JSON array (still media-service)"
     else
         bad "GET $base/api/media -> $code (expected media-service's JSON array)"
+    fi
+
+    # Signed URLs of one published video track: /prev/gen3/<song_id>.mp4 on the CDN
+    track=$(jq -r 'first(.[] | select(.song_id != null and .is_video == true)) | "\(.id) \(.song_id)"' "$body" 2>/dev/null || true)
+    if [ -z "$track" ]; then
+        skip "no published video track in the catalog; stream and download URLs not checked"
+    else
+        read -r id song_id <<<"$track"
+        url=$(curl -s -m 10 "$base/api/media/$id/stream" || true)
+        cdn=$(curl -s -m 15 -o /dev/null -w '%{http_code}' -I "$url" || true)
+        if [[ "$url" == *"/$song_id.mp4?Expires="* ]] && [ "$cdn" = 200 ]; then
+            ok "GET /api/media/$id/stream -> $song_id.mp4, CDN HEAD 200"
+        else
+            bad "GET /api/media/$id/stream -> '$url', CDN HEAD $cdn"
+        fi
+
+        code=$(curl -s -m 10 -o "$body" -w '%{http_code}' -X POST "$base/api/media/$id/download" || true)
+        url=$(jq -r '.url // empty' "$body" 2>/dev/null || true)
+        headers=$(curl -s -m 15 -o /dev/null -D - -I "$url" | tr -d '\r' || true)
+        cdn=$(awk 'NR == 1 {print $2}' <<<"$headers")
+        if [ "$code" = 200 ] && [[ "$url" == *"/$song_id.mp4?download=1&Expires="* ]] && [ "$cdn" = 200 ]; then
+            ok "POST /api/media/$id/download -> signed $song_id.mp4?download=1, CDN HEAD 200"
+        else
+            bad "POST /api/media/$id/download -> $code '$url', CDN HEAD $cdn"
+        fi
+        if grep -qi '^content-disposition: *attachment' <<<"$headers"; then
+            ok "CDN answers the download URL with Content-Disposition: attachment"
+        else
+            warn "CDN sends no Content-Disposition: attachment for download=1, so browsers play the file instead of saving it (see docs/borg-cloud-runbook.md, RecordPool downloads)"
+        fi
     fi
 else
     skip "media-service is not deployed; /api/media not checked"
