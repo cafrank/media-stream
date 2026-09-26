@@ -132,7 +132,7 @@ The RecordPool web app (the Expo static export of `record-pool/`, served by ngin
 | Deploy or redeploy | `make deploy-record-pool` | Docker build (runs `npx expo export --platform web` inside), push `localhost:5050/record-pool:<tag>`, `helm upgrade`. Uncommitted changes under `record-pool/` give a `<sha>-dirty-<time>` tag |
 | Redeploy an existing image | `make deploy-record-pool TAG=<tag> SKIP_BUILD=1` | No build. Find the tag with `make record-pool-status` |
 | Status | `make record-pool-status` | Pods, Ingress, image tag, URL |
-| Test | `make record-pool-test` | App shell, bundle cache headers and deep links through the VIP, `/api/media` still reaches media-service, a track's signed stream and download URLs resolve on the CDN, then `helm test` |
+| Test | `make record-pool-test` | App shell, bundle cache headers and deep links through the VIP, `/api/media` still reaches media-service, a track's signed stream and download URLs resolve on the origin while unsigned and tampered URLs get 403, then `helm test` |
 | Logs | `kubectl -n record-pool logs deploy/record-pool --tail=100` |  |
 | Remove | `helm -n record-pool uninstall record-pool` | Stateless |
 
@@ -142,27 +142,55 @@ The API base URL is built into the bundle: `EXPO_PUBLIC_API_URL` at build time, 
 
 The app loads the catalog a page at a time from `GET /api/media/search?q=&genre=&version=&page=&size=` (newest first, 50 per page, at most 200), and its genre and version dropdowns from `GET /api/media/facets`. `GET /api/media` still returns the whole catalog as one array. `make media-test` checks that search gives the same totals as the old client-side filtering.
 
-### RecordPool downloads
+### RecordPool downloads and signed URLs
 
-Tracks are files on the CDN origin (`www.my12inch.com`, Apache) at `/prev/gen3/<song_id>.mp4` for video and `.mp3` for audio. media-service hands out short-lived signed URLs to them:
+Tracks are files on the origin server `www.my12inch.com`, at `/prev/gen3/<song_id>.mp4` for video and `.mp3` for audio. That server is Apache 2.4.6 on CentOS 7 at 169.45.92.99, and it serves the files itself; there is no CDN in front. media-service hands out signed URLs to them:
 
-- `GET /api/media/{id}/stream` returns a signed URL as text, for playback.
-- `POST /api/media/{id}/download` returns `{"url": ..., "expiresAt": ...}`. The URL carries `download=1` inside the signed part.
+- `GET /api/media/{id}/stream` returns a signed URL as text, for playback. It lasts the track length plus 2 h, or 4 h when the length is unknown, because every seek is a new range request on the same URL.
+- `POST /api/media/{id}/download` returns `{"url": ..., "expiresAt": ...}`, valid for 10 min. The URL carries `download=1` inside the signed part.
 
-Both return 404 for an unknown id or a track without a `song_id`. There is no entitlement or quota check yet.
+Both return 404 for an unknown id or a track without a `song_id`. They return 503 when media-service has no signing key. There is no entitlement or quota check yet.
 
-The CDN is a different origin from the app, so browsers ignore the `download` attribute. The file is saved only when the origin answers a `download=1` request with `Content-Disposition: attachment`. Without that header, Download plays the file in the tab instead, and `make record-pool-test` prints a WARN. On the origin (needs `mod_headers` and `mod_setenvif`):
+**Signature checks on the origin (#17).** A `mod_lua` access checker, `cdn/mod-lua-signed-urls/signed_urls.lua`, runs in enforce mode for `/prev/gen3/`:
 
-```apache
-<Location /prev/gen3/>
-    SetEnvIf Query_String "(^|&)download=1(&|$)" FORCE_DL
-    Header set Content-Disposition "attachment" env=FORCE_DL
-</Location>
-```
+- **Accepted:** a signed URL with the right path, `download=1` flag, expiry and key.
+- **Refused with 403:**
+  - no signature
+  - a wrong or tampered signature
+  - a past `Expires`
+  - `download=1` added or removed
+  - an unknown `KeyName`
+- **Also:** the `/prev` directory listing is off, and `download=1` responses get `Content-Disposition: attachment`.
 
-Check it with `curl -sI "<url from POST /api/media/{id}/download>" | grep -i content-disposition`.
+`make record-pool-test` checks the whole chain: a signed stream URL gets 200, a signed download URL gets `attachment`, and an unsigned or tampered URL gets 403. How the check works, how to test it locally in a container with the server's httpd build, and how to install it: `cdn/mod-lua-signed-urls/README.md`.
 
-The origin doesn't verify signatures yet: a URL with a wrong `Signature` or a past `Expires` still gets 200.
+| Where | What |
+|---|---|
+| Origin `/etc/httpd/conf.d/signed-urls.conf` | Apache config: `LuaHookAccessChecker ... check_signed_url` (enforce). The `check_signed_url_log` variant only logs. |
+| Origin `/etc/httpd/signed-urls/signed_urls.lua` | the check |
+| Origin `/etc/httpd/signed-urls/keys` | `<KeyName> <base64url key>` per line, root:apache 0640, reread every 60 s. It must be a file: an empty directory with that name makes every URL fail with `unknown KeyName`. |
+| Secret `media-service-signing` in namespace `media` | `SIGNING_KEY_NAME`, `SIGNING_KEY` (base64url), loaded through `extraEnv` in `charts/media-service/values-borg.yaml` |
+| Origin logs | refusals go to `/var/log/httpd/ssl_error_log` (HTTPS) and `error_log`, as `signed_urls: denied <path>: <reason>` |
+
+**Rotating the key:**
+
+1. Generate a key: `KEY=$(head -c 16 /dev/urandom | base64 | tr '+/' '-_')`.
+2. Append `mykeyN $KEY` to the origin's `keys` file. The old key stays valid.
+3. Update the Secret, then restart media-service so it reads it:
+
+   ```bash
+   kubectl -n media create secret generic media-service-signing --from-literal=SIGNING_KEY_NAME=mykeyN --from-literal=SIGNING_KEY="$KEY" --dry-run=client -o yaml | kubectl apply -f -
+   kubectl -n media rollout restart deploy/media-service
+   ```
+
+4. Wait until the old key's URLs have expired (up to the longest track plus 2 h, or 4 h), then remove the old line from `keys`.
+
+Never put a key in the source. The key that used to be in `MediaController` (`mykey2`) was revoked on 2026-09-25.
+
+**Troubleshooting a track that doesn't play:**
+
+- **404 from the origin:** the signature was accepted, but the file isn't published. The catalog can hold tracks whose `/prev/gen3/<song_id>.<ext>` symlink was never created; the symlinks come from the `ln-*.sh` step in the README.
+- **403:** read the origin's `ssl_error_log` line for the reason.
 
 ## Databases: PostgreSQL, MongoDB, Redis
 
