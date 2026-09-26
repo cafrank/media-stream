@@ -132,13 +132,35 @@ The RecordPool web app (the Expo static export of `record-pool/`, served by ngin
 | Deploy or redeploy | `make deploy-record-pool` | Docker build (runs `npx expo export --platform web` inside), push `localhost:5050/record-pool:<tag>`, `helm upgrade`. Uncommitted changes under `record-pool/` give a `<sha>-dirty-<time>` tag |
 | Redeploy an existing image | `make deploy-record-pool TAG=<tag> SKIP_BUILD=1` | No build. Find the tag with `make record-pool-status` |
 | Status | `make record-pool-status` | Pods, Ingress, image tag, URL |
-| Test | `make record-pool-test` | App shell, bundle cache headers and deep links through the VIP, `/api/media` still reaches media-service, then `helm test` |
+| Test | `make record-pool-test` | App shell, bundle cache headers and deep links through the VIP, `/api/media` still reaches media-service, a track's signed stream and download URLs resolve on the CDN, then `helm test` |
 | Logs | `kubectl -n record-pool logs deploy/record-pool --tail=100` |  |
 | Remove | `helm -n record-pool uninstall record-pool` | Stateless |
 
 Prerequisites for a deploy: `make provision-registry` and `make provision-edge` have run. The host needs only docker; Node.js runs inside the build image.
 
 The API base URL is built into the bundle: `EXPO_PUBLIC_API_URL` at build time, empty for the same origin. The Helm chart is `charts/record-pool` with `values-borg.yaml`; see its README.
+
+### RecordPool downloads
+
+Tracks are files on the CDN origin (`www.my12inch.com`, Apache) at `/prev/gen3/<song_id>.mp4` for video and `.mp3` for audio. media-service hands out short-lived signed URLs to them:
+
+- `GET /api/media/{id}/stream` returns a signed URL as text, for playback.
+- `POST /api/media/{id}/download` returns `{"url": ..., "expiresAt": ...}`. The URL carries `download=1` inside the signed part.
+
+Both return 404 for an unknown id or a track without a `song_id`. There is no entitlement or quota check yet.
+
+The CDN is a different origin from the app, so browsers ignore the `download` attribute. The file is saved only when the origin answers a `download=1` request with `Content-Disposition: attachment`. Without that header, Download plays the file in the tab instead, and `make record-pool-test` prints a WARN. On the origin (needs `mod_headers` and `mod_setenvif`):
+
+```apache
+<Location /prev/gen3/>
+    SetEnvIf Query_String "(^|&)download=1(&|$)" FORCE_DL
+    Header set Content-Disposition "attachment" env=FORCE_DL
+</Location>
+```
+
+Check it with `curl -sI "<url from POST /api/media/{id}/download>" | grep -i content-disposition`.
+
+The origin doesn't verify signatures yet: a URL with a wrong `Signature` or a past `Expires` still gets 200.
 
 ## Databases: PostgreSQL, MongoDB, Redis
 
