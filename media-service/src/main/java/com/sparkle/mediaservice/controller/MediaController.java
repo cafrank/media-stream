@@ -2,12 +2,14 @@ package com.sparkle.mediaservice.controller;
 
 import com.sparkle.mediaservice.dto.MediaRequest;
 import com.sparkle.mediaservice.dto.MediaResponse;
-import com.sparkle.mediaservice.service.GcsSignUrl;
+import com.sparkle.mediaservice.dto.SignedUrlResponse;
+import com.sparkle.mediaservice.service.CdnUrls;
 import com.sparkle.mediaservice.service.MediaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.annotation.security.RolesAllowed;
 import java.security.InvalidKeyException;
@@ -83,27 +85,46 @@ public class MediaController {
         return cal.getTime();
     }
 
+    /** Signed URL of the track's file for playback (returned as text). */
     @GetMapping(value = "/{id}/stream")
     @RolesAllowed({"user"})
     @ResponseStatus(HttpStatus.OK)
     public String getStreamUrlById(@PathVariable final String id) {
         log.info("getStreamUrlById: "+ id);
+        String rc = signFileUrl(id, false, getMediaExpriation());
+        log.info("Signed URL: "+ rc);
+        return rc;
+    }
+
+    /**
+     * Signed URL that downloads the track's file: it carries download=1, for which the CDN origin answers
+     * with Content-Disposition: attachment. No entitlement or quota check yet (there are no accounts).
+     */
+    @PostMapping(value = "/{id}/download")
+    @RolesAllowed({"user"})
+    @ResponseStatus(HttpStatus.OK)
+    public SignedUrlResponse getDownloadUrlById(@PathVariable final String id) {
+        Date expires = getMediaExpriation();
+        String url = signFileUrl(id, true, expires);
+        log.info("download: id={} url={}", id, url);
+        return SignedUrlResponse.builder().url(url).expiresAt(expires.toInstant().toString()).build();
+    }
+
+    private String signFileUrl(String id, boolean download, Date expires) {
         String keyName = "mykey2";
         byte[] key = Base64.getUrlDecoder().decode("dvCuEDg4jJsTXIQgt6CkbA==");
 
         MediaResponse media = mediaService.getMediaById(id);
+        if (media == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No media " + id);
+        // String url = "https://media-cdn/prev/gen3/"+ id;
+        // https://docs.bridgecrew.io/docs/bc_gcp_networking_3
+        // openssl s_client -connect 104.26.3.5:443 -servername external.example.com
+        String url = CdnUrls.fileUrl(media)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Media " + id + " has no song_id, so no file"));
         try {
-            //String url = "https://www.my12inch.com/prev/gen3/"+ media.getFile();
-            String url = "https://www.my12inch.com/prev/gen3/"+ id;
-            // String url = "https://media-cdn/prev/gen3/"+ id;
-            // https://docs.bridgecrew.io/docs/bc_gcp_networking_3
-            // openssl s_client -connect 104.26.3.5:443 -servername external.example.com
-            String rc =  GcsSignUrl.signUrl(url, key, keyName, getMediaExpriation());
-            log.info("Signed URL: "+ rc);
-            return rc;
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchAlgorithmException e) {
+            return CdnUrls.signedUrl(url, download, key, keyName, expires);
+        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
