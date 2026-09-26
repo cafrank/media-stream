@@ -134,6 +134,7 @@ The RecordPool web app (the Expo static export of `record-pool/`, served by ngin
 | Status | `make record-pool-status` | Pods, Ingress, image tag, URL |
 | Test | `make record-pool-test` | App shell, bundle cache headers and deep links through the VIP, `/api/media` still reaches media-service, a track's signed stream and download URLs resolve on the origin while unsigned and tampered URLs get 403, then `helm test` |
 | Logs | `kubectl -n record-pool logs deploy/record-pool --tail=100` |  |
+| Reach it from localhost and the LAN | `make forward-record-pool` | The VIP is on VirtualBox's host-only network. This runs nginx (Docker container `borg-forward`, host network, restarts with Docker) on `0.0.0.0:8080` and proxies everything to the VIP, both the app and `/api/media`: `http://localhost:8080/`, `http://<LAN IP>:8080/`. Config: `borg-cloud/09-host-forward/nginx.conf`. Stop it with `make unforward-record-pool`. Other machines also need the host firewall to allow 8080 (`sudo ufw allow 8080/tcp` if ufw is active). |
 | Remove | `helm -n record-pool uninstall record-pool` | Stateless |
 
 Prerequisites for a deploy: `make provision-registry` and `make provision-edge` have run. The host needs only docker; Node.js runs inside the build image.

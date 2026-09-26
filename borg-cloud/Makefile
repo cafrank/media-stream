@@ -101,6 +101,8 @@ help:
 	@echo "  make record-pool-status   Pods, ingress, image, URL"
 	@echo "  make record-pool-test     HTTP checks on the VIP (app, deep links, /api/media) + helm test"
 	@echo "    URL: http://$(VIP_ADDRESS)/"
+	@echo "  make forward-record-pool  Serve the VIP on this host's port 8080 (localhost and LAN), nginx in Docker"
+	@echo "  make unforward-record-pool  Stop that forward"
 	@echo ""
 	@echo "  Kafka (namespace $(KAFKA_NAMESPACE); step 06-kafka):"
 	@echo "  make provision-kafka     3 brokers, one per node (KRaft); TLS for host clients"
@@ -307,6 +309,20 @@ record-pool-status:
 		-o jsonpath='{range .items[*]}image: {.spec.template.spec.containers[0].image}{"\n"}{end}'
 	@echo "URL: http://$(VIP_ADDRESS)/"
 
+# Host forward (09-host-forward): the VIP is on VirtualBox's host-only network, so other machines can't
+# reach it. nginx on the host network listens on 0.0.0.0:8080 (09-host-forward/nginx.conf) and proxies
+# everything to the VIP.
+.PHONY: forward-record-pool
+forward-record-pool:
+	docker rm -f borg-forward >/dev/null 2>&1 || true
+	docker run -d --name borg-forward --restart unless-stopped --network host \
+		-v "$(CURDIR)/09-host-forward/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:1.27-alpine >/dev/null
+	@sleep 1; curl -s -m 10 -o /dev/null -w "http://localhost:8080/ -> %{http_code}\n" http://localhost:8080/
+	@for ip in $$(hostname -I); do case $$ip in *:*|192.168.56.*|192.168.122.*|10.*|172.*) ;; *) echo "  also http://$$ip:8080/";; esac; done
+
+.PHONY: unforward-record-pool
+unforward-record-pool:
+	docker rm -f borg-forward
 .PHONY: k3s-uninstall
 k3s-uninstall:
 	@echo "WARNING: This removes k3s and all cluster data from every node. Ctrl-C to abort."
