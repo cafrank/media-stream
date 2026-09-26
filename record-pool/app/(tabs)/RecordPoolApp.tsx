@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useDeferredValue, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Music,
@@ -10,25 +10,67 @@ import {
     Info,
     Search
 } from 'lucide-react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
+import { FlatList, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 
 import { fetchStreamUrl, fetchTracks, Track } from '@/services/catalogApi';
 
 
-// Animation Variants
-const trackItemVariants = {
-    hidden: { opacity: 0, translateY: -10 },
-    visible: { opacity: 1, translateY: 0, transition: { duration: 0.3 } },
-    exit: { opacity: 0, translateY: 10, transition: { duration: 0.2 } },
-};
-
-const ScrollArea = ({ children, style }: { children: React.ReactNode, style?: any }) => {
-  return (
-    <ScrollView style={{...style}}>
-      {children}
-    </ScrollView>
-  )
+interface TrackRowProps {
+    track: Track;
+    isPlaying: boolean;
+    isDownloading: boolean;
+    onInfo: (track: Track) => void;
+    onTogglePlay: (trackId: string) => void;
+    onDownload: (trackId: string) => void;
 }
+
+// One row of the list. Memoized: FlatList re-renders rows whenever extraData changes
+const TrackRow = memo(({ track, isPlaying, isDownloading, onInfo, onTogglePlay, onDownload }: TrackRowProps) => (
+    <View style={styles.trackItem}>
+        <TouchableOpacity
+            style={styles.trackInfoContainer}
+            onPress={() => onInfo(track)}
+        >
+            <Image
+                source={track.artworkUrl ? { uri: track.artworkUrl } : undefined}
+                style={styles.trackArtwork}
+            />
+            <View style={styles.trackTextContainer}>
+                <Text style={styles.trackTitle}>{track.title}</Text>
+                <Text style={styles.trackDetails}>
+                    {[track.artist, track.version].filter(Boolean).join(' - ')}
+                </Text>
+            </View>
+        </TouchableOpacity>
+        <View style={styles.trackActions}>
+            <TouchableOpacity
+                onPress={() => onTogglePlay(track.id)}
+                style={styles.actionButton}
+                title={isPlaying ? 'Pause' : 'Play'}
+            >
+                {isPlaying ? (
+                    <Pause style={styles.actionIcon} />
+                ) : (
+                    <Play style={styles.actionIcon} />
+                )}
+            </TouchableOpacity>
+            <TouchableOpacity
+                onPress={() => onDownload(track.id)}
+                style={styles.actionButton}
+                disabled={isDownloading}
+                title="Download"
+            >
+                {isDownloading ? (
+                    <View style={styles.downloadingIcon}>
+                        <Text>...</Text>
+                    </View>
+                ) : (
+                    <DownloadCloud style={styles.actionIcon} />
+                )}
+            </TouchableOpacity>
+        </View>
+    </View>
+));
 
 const RecordPoolApp = () => {
     const [tracks, setTracks] = useState<Track[]>([]);
@@ -58,19 +100,33 @@ const RecordPoolApp = () => {
         return () => controller.abort();
     }, []);
 
-    const availableGenres = Array.from(new Set(tracks.map((t) => t.genre).filter(Boolean))).sort();
-    const availableVersions = Array.from(new Set(tracks.map((t) => t.version).filter(Boolean))).sort();
+    const availableGenres = useMemo(
+        () => Array.from(new Set(tracks.map((t) => t.genre).filter(Boolean))).sort(),
+        [tracks]
+    );
+    const availableVersions = useMemo(
+        () => Array.from(new Set(tracks.map((t) => t.version).filter(Boolean))).sort(),
+        [tracks]
+    );
 
+    // Lower-cased once per catalog load, not once per track per keystroke
+    const searchIndex = useMemo(
+        () => tracks.map((t) => `${t.title}\n${t.artist}`.toLowerCase()),
+        [tracks]
+    );
 
     // --- Search & Filter ---
-    const filteredTracks = tracks.filter((track) => {
-        const searchMatch =
-            track.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            track.artist.toLowerCase().includes(searchTerm.toLowerCase());
-        const genreMatch = !selectedGenre || track.genre === selectedGenre;
-        const versionMatch = !selectedVersion || track.version === selectedVersion;
-        return searchMatch && genreMatch && versionMatch;
-    });
+    // The whole catalog is filtered in the browser until media-service can page and search (#16).
+    // Deferred so that typing stays responsive while the list catches up.
+    const deferredSearchTerm = useDeferredValue(searchTerm);
+    const filteredTracks = useMemo(() => {
+        const term = deferredSearchTerm.toLowerCase();
+        return tracks.filter((track, i) =>
+            (!term || searchIndex[i].includes(term)) &&
+            (!selectedGenre || track.genre === selectedGenre) &&
+            (!selectedVersion || track.version === selectedVersion)
+        );
+    }, [tracks, searchIndex, deferredSearchTerm, selectedGenre, selectedVersion]);
 
     // --- Audio Playback ---
     const togglePlay = useCallback(
@@ -118,7 +174,7 @@ const RecordPoolApp = () => {
     }, [audio]);
 
     // --- Download ---
-    const handleDownload = (trackId: string) => {
+    const handleDownload = useCallback((trackId: string) => {
         setDownloadingTrackId(trackId);
         // Simulate download with a delay
         setTimeout(() => {
@@ -127,12 +183,12 @@ const RecordPoolApp = () => {
             // window.location.href = `/api/download?trackId=${trackId}`;
             console.log(`Downloading track: ${trackId}`);
         }, 2000); // Simulate a 2-second download
-    };
+    }, []);
 
-    const showTrackInfo = (track: Track) => {
+    const showTrackInfo = useCallback((track: Track) => {
         setTrackInfo(track);
         setIsInfoModalOpen(true);
-    };
+    }, []);
 
     const clearError = () => {
         setError(null);
@@ -189,78 +245,40 @@ const RecordPoolApp = () => {
                 </select>
             </View>
 
-            {/* Track List */}
-            <ScrollArea style={styles.trackListContainer}>
-                <View style={styles.trackList}>
-                    <AnimatePresence>
-                        {loading ? (
-                            <View style={styles.noTracks}>
-                                <Text style={styles.noTracksTitle}>Loading tracks...</Text>
-                            </View>
-                        ) : filteredTracks.length === 0 ? (
-                            <View style={styles.noTracks}>
-                                <Music style={styles.noTracksIcon} />
-                                <Text style={styles.noTracksTitle}>No Tracks Found</Text>
-                                <Text style={styles.noTracksText}>Try adjusting your search or filters.</Text>
-                            </View>
-                        ) : (
-                            filteredTracks.map((track) => (
-                                <motion.div
-                                    key={track.id}
-                                    variants={trackItemVariants}
-                                    initial="hidden"
-                                    animate="visible"
-                                    exit="exit"
-                                    style={styles.trackItem}
-                                >
-                                    <TouchableOpacity
-                                        style={styles.trackInfoContainer}
-                                        onPress={() => showTrackInfo(track)}
-                                    >
-                                        <Image
-                                            source={track.artworkUrl ? { uri: track.artworkUrl } : undefined}
-                                            style={styles.trackArtwork}
-                                        />
-                                        <View style={styles.trackTextContainer}>
-                                            <Text style={styles.trackTitle}>{track.title}</Text>
-                                            <Text style={styles.trackDetails}>
-                                                {[track.artist, track.version].filter(Boolean).join(' - ')}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                    <View style={styles.trackActions}>
-                                        <TouchableOpacity
-                                            onPress={() => togglePlay(track.id)}
-                                            style={styles.actionButton}
-                                            title={playingTrack === track.id ? 'Pause' : 'Play'}
-                                        >
-                                            {playingTrack === track.id ? (
-                                                <Pause style={styles.actionIcon} />
-                                            ) : (
-                                                <Play style={styles.actionIcon} />
-                                            )}
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() => handleDownload(track.id)}
-                                            style={styles.actionButton}
-                                            disabled={downloadingTrackId === track.id}
-                                            title="Download"
-                                        >
-                                            {downloadingTrackId === track.id ? (
-                                                <View style={styles.downloadingIcon}>
-                                                    <Text>...</Text>
-                                                </View>
-                                            ) : (
-                                                <DownloadCloud style={styles.actionIcon} />
-                                            )}
-                                        </TouchableOpacity>
-                                    </View>
-                                </motion.div>
-                            ))
-                        )}
-                    </AnimatePresence>
-                </View>
-            </ScrollArea>
+            {/* Track List: virtualized, only the rows near the viewport are rendered */}
+            <FlatList
+                style={styles.trackListContainer}
+                contentContainerStyle={styles.trackList}
+                data={loading ? [] : filteredTracks}
+                keyExtractor={(track) => track.id}
+                extraData={`${playingTrack}|${downloadingTrackId}`}
+                renderItem={({ item }) => (
+                    <TrackRow
+                        track={item}
+                        isPlaying={playingTrack === item.id}
+                        isDownloading={downloadingTrackId === item.id}
+                        onInfo={showTrackInfo}
+                        onTogglePlay={togglePlay}
+                        onDownload={handleDownload}
+                    />
+                )}
+                initialNumToRender={20}
+                maxToRenderPerBatch={20}
+                windowSize={11}
+                ListEmptyComponent={
+                    loading ? (
+                        <View style={styles.noTracks}>
+                            <Text style={styles.noTracksTitle}>Loading tracks...</Text>
+                        </View>
+                    ) : (
+                        <View style={styles.noTracks}>
+                            <Music style={styles.noTracksIcon} />
+                            <Text style={styles.noTracksTitle}>No Tracks Found</Text>
+                            <Text style={styles.noTracksText}>Try adjusting your search or filters.</Text>
+                        </View>
+                    )
+                }
+            />
 
             {/* Track Info Modal */}
             <AnimatePresence>
