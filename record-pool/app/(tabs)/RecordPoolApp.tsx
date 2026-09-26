@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useDeferredValue, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Music,
@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { FlatList, View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 
-import { fetchDownloadUrl, fetchStreamUrl, fetchTracks, Track } from '@/services/catalogApi';
+import { fetchDownloadUrl, fetchFacets, fetchStreamUrl, Facets, Track } from '@/services/catalogApi';
+import { useTrackSearch } from '@/hooks/useTrackSearch';
 
 
 interface TrackRowProps {
@@ -26,7 +27,7 @@ interface TrackRowProps {
 
 // One row of the list. Memoized: FlatList re-renders rows whenever extraData changes
 const TrackRow = memo(({ track, isPlaying, isDownloading, onInfo, onTogglePlay, onDownload }: TrackRowProps) => (
-    <View style={styles.trackItem}>
+    <View style={styles.trackItem} testID={`track-row-${track.id}`}>
         <TouchableOpacity
             style={styles.trackInfoContainer}
             onPress={() => onInfo(track)}
@@ -36,7 +37,7 @@ const TrackRow = memo(({ track, isPlaying, isDownloading, onInfo, onTogglePlay, 
                 style={styles.trackArtwork}
             />
             <View style={styles.trackTextContainer}>
-                <Text style={styles.trackTitle}>{track.title}</Text>
+                <Text style={styles.trackTitle} testID="track-title">{track.title}</Text>
                 <Text style={styles.trackDetails}>
                     {[track.artist, track.version].filter(Boolean).join(' - ')}
                 </Text>
@@ -73,11 +74,16 @@ const TrackRow = memo(({ track, isPlaying, isDownloading, onInfo, onTogglePlay, 
 ));
 
 const RecordPoolApp = () => {
-    const [tracks, setTracks] = useState<Track[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGenre, setSelectedGenre] = useState('');
     const [selectedVersion, setSelectedVersion] = useState('');
+    const [facets, setFacets] = useState<Facets>({ genres: [], versions: [] });
+    // Filtering and paging happen in media-service (GET /api/media/search)
+    const { tracks, total, loading, error: searchError, loadMore, retry } = useTrackSearch({
+        q: searchTerm,
+        genre: selectedGenre,
+        version: selectedVersion,
+    });
     const [playingTrack, setPlayingTrack] = useState<string | null>(null);
     // Created lazily: Audio doesn't exist while the page is pre-rendered by expo export
     const [audio] = useState<HTMLAudioElement | null>(() => (typeof Audio === 'undefined' ? null : new Audio()));
@@ -86,47 +92,20 @@ const RecordPoolApp = () => {
     const [trackInfo, setTrackInfo] = useState<Track | null>(null);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-    // --- Catalog (media-service GET /api/media) ---
+    // --- Filter dropdowns (media-service GET /api/media/facets) ---
     useEffect(() => {
         const controller = new AbortController();
-        fetchTracks(controller.signal)
-            .then(setTracks)
+        fetchFacets(controller.signal)
+            .then(setFacets)
             .catch((err) => {
-                if (!controller.signal.aborted) setError(`Failed to load tracks: ${err.message}`);
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setLoading(false);
+                if (!controller.signal.aborted) setError(`Failed to load filters: ${err.message}`);
             });
         return () => controller.abort();
     }, []);
 
-    const availableGenres = useMemo(
-        () => Array.from(new Set(tracks.map((t) => t.genre).filter(Boolean))).sort(),
-        [tracks]
-    );
-    const availableVersions = useMemo(
-        () => Array.from(new Set(tracks.map((t) => t.version).filter(Boolean))).sort(),
-        [tracks]
-    );
-
-    // Lower-cased once per catalog load, not once per track per keystroke
-    const searchIndex = useMemo(
-        () => tracks.map((t) => `${t.title}\n${t.artist}`.toLowerCase()),
-        [tracks]
-    );
-
-    // --- Search & Filter ---
-    // The whole catalog is filtered in the browser until media-service can page and search (#16).
-    // Deferred so that typing stays responsive while the list catches up.
-    const deferredSearchTerm = useDeferredValue(searchTerm);
-    const filteredTracks = useMemo(() => {
-        const term = deferredSearchTerm.toLowerCase();
-        return tracks.filter((track, i) =>
-            (!term || searchIndex[i].includes(term)) &&
-            (!selectedGenre || track.genre === selectedGenre) &&
-            (!selectedVersion || track.version === selectedVersion)
-        );
-    }, [tracks, searchIndex, deferredSearchTerm, selectedGenre, selectedVersion]);
+    useEffect(() => {
+        if (searchError) setError(`Failed to load tracks: ${searchError}`);
+    }, [searchError]);
 
     // --- Audio Playback ---
     const togglePlay = useCallback(
@@ -230,7 +209,7 @@ const RecordPoolApp = () => {
                     style={styles.select}
                 >
                     <option value="">All Genres</option>
-                    {availableGenres.map((genre) => (
+                    {facets.genres.map((genre) => (
                         <option key={genre} value={genre}>
                             {genre}
                         </option>
@@ -243,7 +222,7 @@ const RecordPoolApp = () => {
                     style={styles.select}
                 >
                     <option value="">All Versions</option>
-                    {availableVersions.map((version) => (
+                    {facets.versions.map((version) => (
                         <option key={version} value={version}>
                             {version}
                         </option>
@@ -251,11 +230,16 @@ const RecordPoolApp = () => {
                 </select>
             </View>
 
+            <Text style={styles.trackCount}>
+                {loading && tracks.length === 0 ? ' ' : `${total.toLocaleString()} tracks`}
+            </Text>
+
             {/* Track List: virtualized, only the rows near the viewport are rendered */}
             <FlatList
+                testID="track-list"
                 style={styles.trackListContainer}
                 contentContainerStyle={styles.trackList}
-                data={loading ? [] : filteredTracks}
+                data={tracks}
                 keyExtractor={(track) => track.id}
                 extraData={`${playingTrack}|${downloadingTrackId}`}
                 renderItem={({ item }) => (
@@ -271,11 +255,30 @@ const RecordPoolApp = () => {
                 initialNumToRender={20}
                 maxToRenderPerBatch={20}
                 windowSize={11}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                    tracks.length === 0 ? null : loading ? (
+                        <View style={styles.noTracks}>
+                            <Text style={styles.noTracksText}>Loading more...</Text>
+                        </View>
+                    ) : searchError ? (
+                        <TouchableOpacity style={styles.noTracks} onPress={retry}>
+                            <Text style={styles.noTracksText}>Couldn't load more tracks, tap to retry</Text>
+                        </TouchableOpacity>
+                    ) : null
+                }
                 ListEmptyComponent={
                     loading ? (
                         <View style={styles.noTracks}>
                             <Text style={styles.noTracksTitle}>Loading tracks...</Text>
                         </View>
+                    ) : searchError ? (
+                        <TouchableOpacity style={styles.noTracks} onPress={retry}>
+                            <AlertTriangle style={styles.noTracksIcon} />
+                            <Text style={styles.noTracksTitle}>Couldn't load tracks</Text>
+                            <Text style={styles.noTracksText}>Tap to retry</Text>
+                        </TouchableOpacity>
                     ) : (
                         <View style={styles.noTracks}>
                             <Music style={styles.noTracksIcon} />
@@ -444,6 +447,12 @@ const styles = StyleSheet.create({
     },
     trackList: {
         padding: 10,
+    },
+    trackCount: {
+        fontSize: 14,
+        color: '#d1d5db',
+        marginBottom: 8,
+        marginLeft: 10,
     },
     trackItem: {
         flexDirection: 'row',

@@ -1,6 +1,8 @@
 package com.sparkle.mediaservice.controller;
 
 import com.sparkle.mediaservice.dto.MediaRequest;
+import com.sparkle.mediaservice.dto.MediaFacets;
+import com.sparkle.mediaservice.dto.MediaPage;
 import com.sparkle.mediaservice.dto.MediaResponse;
 import com.sparkle.mediaservice.dto.SignedUrlResponse;
 import com.sparkle.mediaservice.service.CdnUrls;
@@ -62,6 +64,33 @@ public class MediaController {
     public List<MediaResponse> getAllMedia() {
         log.info("getAllMedia");
         return mediaService.getAllMedia();
+    }
+
+    public static final int MAX_PAGE_SIZE = 200;
+
+    /** One page of the catalog, newest first. q: title or artist substring; genre, version: exact. */
+    @GetMapping(value = "/search")
+    @RolesAllowed({"user"})
+    @ResponseStatus(HttpStatus.OK)
+    public MediaPage searchMedia(@RequestParam(required = false) String q,
+                                 @RequestParam(required = false) String genre,
+                                 @RequestParam(required = false) String version,
+                                 @RequestParam(defaultValue = "0") int page,
+                                 @RequestParam(defaultValue = "50") int size) {
+        if (page < 0)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "page must be >= 0");
+        if (size < 1 || size > MAX_PAGE_SIZE)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "size must be 1.." + MAX_PAGE_SIZE);
+        log.info("searchMedia: q={} genre={} version={} page={} size={}", q, genre, version, page, size);
+        return mediaService.search(q, genre, version, page, size);
+    }
+
+    /** Distinct genres and versions, for filter dropdowns. */
+    @GetMapping(value = "/facets")
+    @RolesAllowed({"user"})
+    @ResponseStatus(HttpStatus.OK)
+    public MediaFacets getFacets() {
+        return mediaService.facets();
     }
 
     @GetMapping(value = "/{title}")

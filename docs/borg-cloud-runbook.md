@@ -140,6 +140,8 @@ Prerequisites for a deploy: `make provision-registry` and `make provision-edge` 
 
 The API base URL is built into the bundle: `EXPO_PUBLIC_API_URL` at build time, empty for the same origin. The Helm chart is `charts/record-pool` with `values-borg.yaml`; see its README.
 
+The app loads the catalog a page at a time from `GET /api/media/search?q=&genre=&version=&page=&size=` (newest first, 50 per page, at most 200), and its genre and version dropdowns from `GET /api/media/facets`. `GET /api/media` still returns the whole catalog as one array. `make media-test` checks that search gives the same totals as the old client-side filtering.
+
 ### RecordPool downloads
 
 Tracks are files on the CDN origin (`www.my12inch.com`, Apache) at `/prev/gen3/<song_id>.mp4` for video and `.mp3` for audio. media-service hands out short-lived signed URLs to them:

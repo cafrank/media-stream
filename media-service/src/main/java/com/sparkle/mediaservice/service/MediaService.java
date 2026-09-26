@@ -1,5 +1,10 @@
 package com.sparkle.mediaservice.service;
 
+import com.sparkle.mediaservice.dto.MediaFacets;
+import com.sparkle.mediaservice.dto.MediaPage;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 import com.sparkle.mediaservice.dto.MediaRequest;
 import com.sparkle.mediaservice.dto.MediaResponse;
 import com.sparkle.mediaservice.model.Media;
@@ -17,6 +22,7 @@ import java.util.Optional;
 public class MediaService {
 
     private final MediaRepository mediaRepository;
+    private final MongoTemplate mongoTemplate;
 
     public void createMedia(MediaRequest mediaRequest) {
         Media media =  Media.builder()
@@ -53,6 +59,26 @@ public class MediaService {
     public List<MediaResponse> getMediaByTitle(String title) {
         List<Media> media = mediaRepository.findByTitleOrArtistLike(title, title);
         return media.stream().map(this::mapToMediaResponse).toList();
+    }
+
+    /** One page of the catalog, newest first. page and size are validated by the caller. */
+    public MediaPage search(String q, String genre, String version, int page, int size) {
+        Query query = new Query(MediaQueries.criteria(q, genre, version));
+        long total = mongoTemplate.count(query, Media.class);
+        query.with(Sort.by(Sort.Direction.DESC, "_id")).skip((long) page * size).limit(size);
+        List<MediaResponse> items = mongoTemplate.find(query, Media.class).stream().map(this::mapToMediaResponse).toList();
+        return MediaPage.builder().items(items).page(page).size(size).total(total).build();
+    }
+
+    public MediaFacets facets() {
+        return MediaFacets.builder().genres(distinct("genre")).versions(distinct("remix")).build();
+    }
+
+    private List<String> distinct(String field) {
+        return mongoTemplate.findDistinct(new Query(), field, Media.class, String.class).stream()
+                .filter(v -> v != null && !v.isBlank())
+                .sorted()
+                .toList();
     }
 
     public MediaResponse getMediaById(String id) {

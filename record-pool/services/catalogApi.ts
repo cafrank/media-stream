@@ -65,11 +65,44 @@ export function toTrack(m: MediaResponse): Track {
     };
 }
 
-/** Every track in the catalog. media-service has no search or paging yet, so callers filter locally. */
-export async function fetchTracks(signal?: AbortSignal): Promise<Track[]> {
-    const response = await get('/api/media', signal);
-    const body: MediaResponse[] = await response.json();
-    return body.map(toTrack);
+/** Search filters and the page to fetch. Empty q, genre or version means no filter. page counts from 0. */
+export interface TrackQuery {
+    q?: string;
+    genre?: string;
+    version?: string;
+    page: number;
+    size: number;
+}
+
+/** One page of results. total counts every match. */
+export interface TrackPage {
+    tracks: Track[];
+    page: number;
+    size: number;
+    total: number;
+}
+
+/** The values for the genre and version dropdowns */
+export interface Facets {
+    genres: string[];
+    versions: string[];
+}
+
+/** One page of the catalog, newest first (GET /api/media/search) */
+export async function searchTracks(query: TrackQuery, signal?: AbortSignal): Promise<TrackPage> {
+    const params = new URLSearchParams({ page: String(query.page), size: String(query.size) });
+    if (query.q) params.set('q', query.q);
+    if (query.genre) params.set('genre', query.genre);
+    if (query.version) params.set('version', query.version);
+    const response = await get(`/api/media/search?${params}`, signal);
+    const body: { items: MediaResponse[]; page: number; size: number; total: number } = await response.json();
+    return { tracks: body.items.map(toTrack), page: body.page, size: body.size, total: body.total };
+}
+
+/** Distinct genres and versions in the catalog (GET /api/media/facets) */
+export async function fetchFacets(signal?: AbortSignal): Promise<Facets> {
+    const response = await get('/api/media/facets', signal);
+    return response.json();
 }
 
 /** A short-lived signed URL to play the track (GET /api/media/{id}/stream returns it as text). */
